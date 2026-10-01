@@ -350,10 +350,10 @@ importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
 
 ### Phase 1 — Projects home (½ session)
 
-- [ ] Project CRUD + archive
-- [ ] Project cards with live metrics
-- [ ] Empty state + add project modal
-- [ ] **Import from AI** screen: copy prompt + paste JSON + preview + `importProjectBundle`
+- [x] Project CRUD + archive
+- [x] Project cards with live metrics (horizontal status strip + unified board)
+- [x] Empty state + add project modal
+- [x] **Import from AI** screen: copy prompt + paste JSON + preview + `importProjectBundle`
 
 ### Phase 2 — Board + tasks (1 session)
 

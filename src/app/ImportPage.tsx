@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { ImportFlow } from '../features/import/ImportFlow'
 
 export function ImportPage() {
   return (
@@ -7,10 +8,10 @@ export function ImportPage() {
         ← Projects
       </Link>
       <h1 className="text-lg font-semibold">Import from AI</h1>
-      <p className="mt-2 text-sm text-muted">
-        Placeholder route — copy prompt, paste JSON, and preview ship in Phase
-        1.
+      <p className="mb-6 mt-1 text-sm text-muted">
+        Bootstrap a project with many tasks in one step.
       </p>
+      <ImportFlow />
     </div>
   )
 }

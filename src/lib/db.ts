@@ -14,6 +14,10 @@ import type {
   TaskStatus,
 } from './types'
 import { PROJECT_COLORS } from './types'
+import type { ProjectBundleV1 } from './bundle-schema'
+
+export { parseProjectBundleJson } from './bundle-import'
+export type { ProjectBundleV1 } from './bundle-schema'
 
 const DB_NAME = 'home-projects'
 const DB_VERSION = 1
@@ -170,6 +174,57 @@ export async function updateProject(
 
 export async function archiveProject(id: string): Promise<Project> {
   return updateProject(id, { archivedAt: nowIso() })
+}
+
+/** Create project + tasks from AI bundle in one IndexedDB transaction. */
+export async function importProjectBundle(
+  bundle: ProjectBundleV1,
+): Promise<{ projectId: string }> {
+  const db = await getDb()
+  const ts = nowIso()
+  const projectId = newId()
+  const project: Project = {
+    id: projectId,
+    name: bundle.project.name,
+    color: defaultColor(bundle.project.color),
+    note: bundle.project.note?.trim() || undefined,
+    links: [],
+    createdAt: ts,
+    updatedAt: ts,
+  }
+
+  const tasks: Task[] = bundle.tasks.map((t, index) => {
+    const status = t.status ?? 'backlog'
+    const links = normalizeLinks(t.links)
+    assertValidLinks(links)
+    return {
+      id: newId(),
+      projectId,
+      title: t.title.trim(),
+      status,
+      note: t.note?.trim() || undefined,
+      links,
+      sortOrder: index,
+      createdAt: ts,
+      updatedAt: ts,
+      completedAt: status === 'done' ? ts : undefined,
+    }
+  })
+
+  const tx = db.transaction(['projects', 'tasks'], 'readwrite')
+  try {
+    await tx.objectStore('projects').put(project)
+    const taskStore = tx.objectStore('tasks')
+    for (const task of tasks) {
+      await taskStore.put(task)
+    }
+    await tx.done
+  } catch (err) {
+    tx.abort()
+    throw err instanceof Error ? err : new Error('Import failed')
+  }
+
+  return { projectId }
 }
 
 export async function listTasksByProject(projectId: string): Promise<Task[]> {

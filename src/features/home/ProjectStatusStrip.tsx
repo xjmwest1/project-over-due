@@ -13,6 +13,7 @@ type Props = {
   }
   selectedProjectId: string | null
   onSelectProject: (projectId: string | null) => void
+  onEditProject?: (projectId: string) => void
 }
 
 export function ProjectStatusStrip({
@@ -21,6 +22,7 @@ export function ProjectStatusStrip({
   globalMetrics,
   selectedProjectId,
   onSelectProject,
+  onEditProject,
 }: Props) {
   return (
     <div className="border-b border-border pb-3">
@@ -50,6 +52,9 @@ export function ProjectStatusStrip({
               fillClassName={styles.dot}
               blocked={m?.byStatus.blocked ?? 0}
               onSelect={() => onSelectProject(project.id)}
+              onEdit={
+                onEditProject ? () => onEditProject(project.id) : undefined
+              }
             />
           )
         })}
@@ -69,6 +74,7 @@ type CardProps = {
   fillClassName?: string
   blocked?: number
   onSelect: () => void
+  onEdit?: () => void
 }
 
 function ProjectStatusCard({
@@ -82,17 +88,30 @@ function ProjectStatusCard({
   fillClassName = 'bg-accent-mint',
   blocked = 0,
   onSelect,
+  onEdit,
 }: CardProps) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`flex w-[168px] shrink-0 snap-start flex-col rounded-[var(--radius-card)] border px-3 py-2.5 text-left transition-colors ${
+    <div
+      className={`relative flex w-[168px] shrink-0 snap-start flex-col rounded-[var(--radius-card)] border px-3 py-2.5 text-left transition-colors ${
         selected
           ? 'border-white/20 bg-surface-raised ring-1 ring-white/10'
           : 'border-border bg-surface hover:bg-surface-raised'
       }`}
     >
+      {onEdit ? (
+        <button
+          type="button"
+          aria-label="Edit project"
+          className="absolute right-1.5 top-1.5 min-h-8 min-w-8 rounded-md text-sm text-muted hover:bg-white/5 hover:text-text"
+          onClick={(e) => {
+            e.stopPropagation()
+            onEdit()
+          }}
+        >
+          ⋯
+        </button>
+      ) : null}
+      <button type="button" onClick={onSelect} className="text-left">
       <div className="mb-1 flex items-center gap-2">
         <span
           className={`h-2 w-2 shrink-0 rounded-full ${dotClassName}`}
@@ -116,6 +135,7 @@ function ProjectStatusCard({
         )}
       </p>
       <ProgressBar progress={progress} fillClassName={fillClassName} />
-    </button>
+      </button>
+    </div>
   )
 }
