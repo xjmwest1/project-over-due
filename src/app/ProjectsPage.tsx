@@ -5,7 +5,7 @@ import { ProjectStatusStrip } from '../features/home/ProjectStatusStrip'
 import { useHomeBoardData } from '../features/home/useHomeBoardData'
 import { useProjectStore } from '../stores/projectStore'
 
-const PROJECT_PARAM = 'project'
+const PROJECT_PARAM = 'p'
 
 export function ProjectsPage() {
   const projects = useProjectStore((s) => s.projects)
