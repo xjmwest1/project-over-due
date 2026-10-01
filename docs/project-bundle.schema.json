@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-projects.local/schemas/project-bundle/v1.json",
+  "title": "HomeProjectsProjectBundleV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "project", "tasks"],
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Bundle format version; must be 1 for MVP."
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "color": {
+          "type": "string",
+          "enum": ["mint", "sky", "violet", "amber", "rose", "slate"],
+          "description": "Optional accent preset; defaults to mint if omitted."
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 280
+          },
+          "status": {
+            "type": "string",
+            "enum": ["backlog", "ready", "doing", "blocked", "done"],
+            "default": "backlog"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
+      }
+    }
+  }
+}

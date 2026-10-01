@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Lane layout mock — Home Projects</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0d0f;
+      --surface: #161618;
+      --border: rgba(255,255,255,0.08);
+      --text: #ececee;
+      --muted: #8b8b93;
+      --accent: #6ee7b7;
+      --lane-label: #6b6b73;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+      background: #1a1a1e;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: var(--text);
+    }
+    .phone {
+      width: 390px;
+      max-width: 100%;
+      height: 844px;
+      max-height: 90vh;
+      background: var(--bg);
+      border-radius: 40px;
+      border: 3px solid #2a2a30;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .status-bar {
+      height: 44px;
+      padding: 12px 24px 0;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      color: var(--text);
+    }
+    .header {
+      padding: 8px 16px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .back {
+      color: var(--muted);
+      font-size: 22px;
+      line-height: 1;
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    h1 {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .progress-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 4px;
+      background: var(--surface);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 42%;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    .board {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0 80px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .lane {
+      margin-bottom: 20px;
+    }
+    .lane-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px 8px;
+    }
+    .lane-name {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--lane-label);
+    }
+    .lane-count {
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--surface);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .lane-scroll {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 0 16px 4px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .lane-scroll::-webkit-scrollbar { display: none; }
+    .card {
+      flex: 0 0 168px;
+      scroll-snap-align: start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 12px 14px;
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    .card.wide { flex: 0 0 200px; }
+    .card.muted {
+      opacity: 0.55;
+      font-weight: 400;
+    }
+    .lane.doing .lane-name { color: #93c5fd; }
+    .lane.blocked .lane-name { color: #fca5a5; }
+    .lane.done .lane-name { color: var(--muted); }
+    .fab {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 48px);
+      max-width: 342px;
+      height: 48px;
+      background: #fafafa;
+      color: #0d0d0f;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .wrap {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .hint {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 8px 16px 0;
+      max-width: 390px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="phone">
+      <div class="status-bar">
+        <span>9:41</span>
+        <span>●●●</span>
+      </div>
+      <div class="wrap">
+        <header class="header">
+          <div class="header-top">
+            <span class="back">‹</span>
+            <div class="title-row">
+              <span class="dot"></span>
+              <h1>Kitchen Reno</h1>
+            </div>
+          </div>
+          <p class="progress-meta">5 of 12 done · <strong style="color: var(--text); font-weight: 500;">7 left</strong></p>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+        </header>
+        <main class="board">
+          <section class="lane">
+            <div class="lane-header">
+              <span class="lane-name">Backlog</span>
+              <span class="lane-count">3</span>
+            </div>
+            <div class="lane-scroll">
+              <div class="card">Pick backsplash tile</div>
+              <div class="card">Measure window trim</div>
+              <div class="card wide">Research soft-close hinges</div>
+            </div>
+          </section>
+          <section class="lane">
+            <div class="lane-header">
+              <span class="lane-name">Ready</span>
+              <span class="lane-count">2</span>
+            </div>
+            <div class="lane-scroll">
+              <div class="card">Order cabinet pulls</div>
+              <div class="card">Buy painter's tape</div>
+            </div>
+          </section>
+          <section class="lane doing">
+            <div class="lane-header">
+              <span class="lane-name">Doing</span>
+              <span class="lane-count">1</span>
+            </div>
+            <div class="lane-scroll">
+              <div class="card wide">Sand and prime pantry doors</div>
+            </div>
+          </section>
+          <section class="lane blocked">
+            <div class="lane-header">
+              <span class="lane-name">Blocked</span>
+              <span class="lane-count">1</span>
+            </div>
+            <div class="lane-scroll">
+              <div class="card">Install countertop</div>
+            </div>
+          </section>
+          <section class="lane done">
+            <div class="lane-header">
+              <span class="lane-name">Done</span>
+              <span class="lane-count">5</span>
+            </div>
+            <div class="lane-scroll">
+              <div class="card muted">Demo old cabinets</div>
+              <div class="card muted">Rough electrical</div>
+              <div class="card muted">Drywall patch</div>
+            </div>
+          </section>
+        </main>
+        <button type="button" class="fab">+ Add task</button>
+      </div>
+    </div>
+    <p class="hint">Mock: vertical lanes · swipe horizontally within each lane · scroll vertically for more lanes</p>
+  </div>
+</body>
+</html>

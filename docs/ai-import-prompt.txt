@@ -1,0 +1,29 @@
+You are helping me bootstrap a home project in my personal task app. Output a single JSON object only—no markdown fences, no commentary before or after—that matches this schema exactly.
+
+Schema (version 1):
+{
+  "version": 1,
+  "project": {
+    "name": string (required, 1–120 chars),
+    "color": optional, one of: mint | sky | violet | amber | rose | slate
+  },
+  "tasks": [
+    {
+      "title": string (required, 1–280 chars),
+      "status": optional, one of: backlog | ready | doing | blocked | done (default backlog),
+      "note": optional string (max 2000 chars)
+    }
+  ]
+}
+
+Rules:
+- Include between 1 and 200 tasks.
+- Use realistic, actionable task titles for a home/DIY project (not epics like "finish kitchen").
+- Default new work to status "backlog". Only use "ready", "doing", "blocked", or "done" when my description clearly implies it.
+- Order tasks in a sensible sequence (early items first).
+- Do not invent a project name if I gave one; use mine verbatim.
+- If I did not specify a color, pick one preset that fits the project mood.
+
+After I describe the project below, respond with only the JSON object.
+
+My project:
