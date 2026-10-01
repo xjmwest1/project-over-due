@@ -23,7 +23,12 @@
         "color": {
           "type": "string",
           "enum": ["mint", "sky", "violet", "amber", "rose", "slate"],
-          "description": "Optional accent preset; defaults to mint if omitted."
+          "description": "Optional accent preset for project chrome; defaults to mint if omitted."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Optional short project summary; links are not part of bundle v1."
         }
       }
     },

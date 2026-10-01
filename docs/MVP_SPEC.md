@@ -73,11 +73,17 @@ Lanes are **global statuses** shared across projects on the board view (filter: 
 Project {
   id: string          // uuid
   name: string
-  color?: string      // accent for card + board header (preset palette)
-  sortOrder: number
+  color: string       // user-chosen accent preset (card left border / dot, board header)
+  description?: string // plain text; optional short blurb about the project
+  links: ProjectLink[] // reference URLs (docs, shopping lists, etc.); default []
   archivedAt?: string // ISO; excluded from default lists
   createdAt: string
   updatedAt: string
+}
+
+ProjectLink {
+  url: string         // absolute https URL (validate on write)
+  label?: string      // optional display title; fallback to URL host/path in UI
 }
 
 Task {
@@ -104,6 +110,10 @@ AppMeta {
 - `progress(project)` = `done / (done + remaining)` or 0 if empty
 - Global remaining = sum across non-archived projects
 
+**Home project list order (MVP):** no manual reorder — sort by `updatedAt` descending (most recently touched first). Task `sortOrder` within lanes is unchanged.
+
+**Accent color:** one of the preset tokens (`mint` | `sky` | `violet` | `amber` | `rose` | `slate`). Set on create (default `mint`); user can change anytime from project edit / ⋯ menu. Used only as accent chrome, not lane or task colors.
+
 ---
 
 ## UI / visual spec (Linear-adjacent)
@@ -121,10 +131,10 @@ AppMeta {
    - Sticky header: “Projects” + add project  
    - Cards: name, progress bar, `3/12 done · 9 left`  
    - Tap → board  
-   - Long-press or ⋯ → archive, rename, color  
+   - Long-press or ⋯ → archive, rename, accent color, description, links  
 
 2. **Board (per project)**  
-   - Header: back, project name, progress mini-bar  
+   - Header: back, project name, progress mini-bar; optional description + links entry (sheet or compact row)  
    - Horizontal scroll **swim lanes** on mobile (one lane full-width optional setting later; MVP: horizontal snap scroll per lane column)  
    - **Alternative MVP layout (recommended):** Vertical stack of lanes; each lane scrolls horizontally for tasks — easier thumb reach than tiny columns  
    - FAB or bottom bar: **Add task** (defaults to Backlog)  
@@ -188,7 +198,7 @@ Canonical JSON Schema: [`docs/project-bundle.schema.json`](project-bundle.schema
 ```json
 {
   "version": 1,
-  "project": { "name": "Kitchen Reno", "color": "mint" },
+  "project": { "name": "Kitchen Reno", "color": "mint", "description": "Q2 refresh, keep existing layout" },
   "tasks": [
     { "title": "Order cabinet pulls", "status": "ready" },
     { "title": "Install countertop", "status": "blocked", "note": "After template" }
@@ -200,7 +210,8 @@ Canonical JSON Schema: [`docs/project-bundle.schema.json`](project-bundle.schema
 |-------|--------|
 | `version` | Must be `1` |
 | `project.name` | Required |
-| `project.color` | Optional preset; default `mint` |
+| `project.color` | Optional accent preset; default `mint` on import |
+| `project.description` | Optional; copied to stored project; `links` start as `[]` (edit in app) |
 | `tasks[].title` | Required |
 | `tasks[].status` | Optional; default `backlog` |
 | `tasks[].note` | Optional |
@@ -285,7 +296,7 @@ Use **@dnd-kit** with touch sensors and `TouchSensor` activation delay (~200ms) 
 
 ```ts
 // Projects
-createProject(name, color?)
+createProject(name, opts?: { color?, description?, links? })
 updateProject(id, patch)
 archiveProject(id)
 listProjects({ includeArchived? })
