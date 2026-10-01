@@ -2,8 +2,6 @@
 
 Personal, mobile-first home project task manager (Linear-inspired UI, project → task hierarchy, status swim lanes).
 
-This repository currently holds **planning and design docs** for the MVP.
-
 ## Docs
 
 | File | Description |
@@ -16,6 +14,16 @@ This repository currently holds **planning and design docs** for the MVP.
 
 - [mockup/lane-layout.html](mockup/lane-layout.html) — mobile board layout (vertical lanes, horizontal task scroll)
 
-## Status
+## App (Phase 0)
 
-Specification only; application code not started yet.
+Vite + React 19 + TypeScript, Tailwind v4, React Router, Zustand, IndexedDB (`idb`), PWA (`vite-plugin-pwa`).
+
+```bash
+npm install
+npm run dev
+npm run build
+```
+
+Source layout: `src/app` (router + pages), `src/features` (domain modules, Phase 1+), `src/lib/db.ts` (repository), `src/stores`, `src/styles/tokens.css`.
+
+First launch seeds an optional **Welcome** demo project in IndexedDB.

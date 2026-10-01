@@ -343,10 +343,10 @@ importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
 
 ### Phase 0 — Scaffold (½ session)
 
-- [ ] Vite React TS, Tailwind, router, Zustand
-- [ ] Design tokens (colors, spacing, fonts)
-- [ ] IndexedDB schema + seed optional demo project
-- [ ] PWA manifest + icons (minimal)
+- [x] Vite React TS, Tailwind, router, Zustand
+- [x] Design tokens (colors, spacing, fonts)
+- [x] IndexedDB schema + seed optional demo project
+- [x] PWA manifest + icons (minimal)
 
 ### Phase 1 — Projects home (½ session)
 

@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@layer base {
+  html {
+    @apply bg-bg text-text antialiased;
+    font-family: var(--font-sans);
+  }
+
+  body {
+    @apply min-h-dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  #root {
+    @apply min-h-dvh flex flex-col;
+  }
+}
