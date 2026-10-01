@@ -161,6 +161,7 @@ export function ProjectsPage() {
       </main>
 
       <ProjectFormSheet
+        key={sheetMode === 'edit' ? editProjectId : 'create'}
         open={sheetMode !== null}
         mode={sheetMode === 'edit' ? 'edit' : 'create'}
         initial={editProject}
