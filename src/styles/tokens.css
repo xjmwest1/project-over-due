@@ -1,0 +1,22 @@
+@theme {
+  --color-bg: #0d0d0f;
+  --color-surface: #161618;
+  --color-surface-raised: #1c1c1f;
+  --color-border: color-mix(in srgb, white 8%, transparent);
+  --color-text: #ececee;
+  --color-muted: #8b8b93;
+  --color-lane-label: #6b6b73;
+
+  --color-accent-mint: #6ee7b7;
+  --color-accent-sky: #7dd3fc;
+  --color-accent-violet: #a78bfa;
+  --color-accent-amber: #fbbf24;
+  --color-accent-rose: #fb7185;
+  --color-accent-slate: #94a3b8;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+
+  --spacing-touch: 2.75rem;
+  --radius-card: 0.75rem;
+  --radius-sheet: 1rem;
+}
