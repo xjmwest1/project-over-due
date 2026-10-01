@@ -6,13 +6,14 @@ Schema (version 1):
   "project": {
     "name": string (required, 1–120 chars),
     "color": optional, one of: mint | sky | violet | amber | rose | slate,
-    "description": optional string (max 2000 chars, one-paragraph summary of the project)
+    "note": optional string (max 2000 chars, one-paragraph summary of the project)
   },
   "tasks": [
     {
       "title": string (required, 1–280 chars),
       "status": optional, one of: backlog | ready | doing | blocked | done (default backlog),
-      "note": optional string (max 2000 chars)
+      "note": optional string (max 2000 chars),
+      "links": optional array of { "url": string (required), "label": optional string (max 120 chars) }, max 20 per task
     }
   ]
 }
@@ -24,7 +25,8 @@ Rules:
 - Order tasks in a sensible sequence (early items first).
 - Do not invent a project name if I gave one; use mine verbatim.
 - If I did not specify a color, pick one preset that fits the project mood.
-- If helpful, set "description" to a brief summary of scope and constraints from my message (not a task list).
+- If helpful, set project "note" to a brief summary of scope and constraints from my message (not a task list).
+- Include task "links" only when my message mentions a specific URL relevant to that task; do not invent URLs.
 
 After I describe the project below, respond with only the JSON object.
 

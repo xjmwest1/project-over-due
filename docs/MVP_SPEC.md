@@ -74,14 +74,14 @@ Project {
   id: string          // uuid
   name: string
   color: string       // user-chosen accent preset (card left border / dot, board header)
-  description?: string // plain text; optional short blurb about the project
-  links: ProjectLink[] // reference URLs (docs, shopping lists, etc.); default []
+  note?: string       // plain text; optional short blurb about the project
+  links: Link[]       // reference URLs (docs, shopping lists, etc.); default []
   archivedAt?: string // ISO; excluded from default lists
   createdAt: string
   updatedAt: string
 }
 
-ProjectLink {
+Link {
   url: string         // absolute https URL (validate on write)
   label?: string      // optional display title; fallback to URL host/path in UI
 }
@@ -92,6 +92,7 @@ Task {
   title: string
   status: 'backlog' | 'ready' | 'doing' | 'blocked' | 'done'
   note?: string       // plain text, max ~2k chars
+  links: Link[]       // reference URLs for this task; default []
   sortOrder: number   // within lane
   createdAt: string
   updatedAt: string
@@ -131,10 +132,10 @@ AppMeta {
    - Sticky header: “Projects” + add project  
    - Cards: name, progress bar, `3/12 done · 9 left`  
    - Tap → board  
-   - Long-press or ⋯ → archive, rename, accent color, description, links  
+   - Long-press or ⋯ → archive, rename, accent color, note, links  
 
 2. **Board (per project)**  
-   - Header: back, project name, progress mini-bar; optional description + links entry (sheet or compact row)  
+   - Header: back, project name, progress mini-bar; optional note + links entry (sheet or compact row)  
    - Horizontal scroll **swim lanes** on mobile (one lane full-width optional setting later; MVP: horizontal snap scroll per lane column)  
    - **Alternative MVP layout (recommended):** Vertical stack of lanes; each lane scrolls horizontally for tasks — easier thumb reach than tiny columns  
    - FAB or bottom bar: **Add task** (defaults to Backlog)  
@@ -144,6 +145,7 @@ AppMeta {
    - Title editable inline  
    - Status as segmented control or lane picker  
    - Note field  
+   - Links list (add / edit / remove)  
    - Delete with confirm  
 
 4. **Progress overview (segment on home or tab)**  
@@ -198,10 +200,15 @@ Canonical JSON Schema: [`docs/project-bundle.schema.json`](project-bundle.schema
 ```json
 {
   "version": 1,
-  "project": { "name": "Kitchen Reno", "color": "mint", "description": "Q2 refresh, keep existing layout" },
+  "project": { "name": "Kitchen Reno", "color": "mint", "note": "Q2 refresh, keep existing layout" },
   "tasks": [
     { "title": "Order cabinet pulls", "status": "ready" },
-    { "title": "Install countertop", "status": "blocked", "note": "After template" }
+    {
+      "title": "Install countertop",
+      "status": "blocked",
+      "note": "After template",
+      "links": [{ "url": "https://example.com/counter-vendor", "label": "Fabricator portal" }]
+    }
   ]
 }
 ```
@@ -211,10 +218,11 @@ Canonical JSON Schema: [`docs/project-bundle.schema.json`](project-bundle.schema
 | `version` | Must be `1` |
 | `project.name` | Required |
 | `project.color` | Optional accent preset; default `mint` on import |
-| `project.description` | Optional; copied to stored project; `links` start as `[]` (edit in app) |
+| `project.note` | Optional; copied to stored project; `project.links` start as `[]` (edit in app) |
 | `tasks[].title` | Required |
 | `tasks[].status` | Optional; default `backlog` |
 | `tasks[].note` | Optional |
+| `tasks[].links` | Optional; default `[]`; same shape as stored `Link` |
 
 Validation: use Zod (or similar) mirroring the schema; reject `version !== 1` with message to re-copy prompt.
 
@@ -296,7 +304,7 @@ Use **@dnd-kit** with touch sensors and `TouchSensor` activation delay (~200ms) 
 
 ```ts
 // Projects
-createProject(name, opts?: { color?, description?, links? })
+createProject(name, opts?: { color?, note?, links? })
 updateProject(id, patch)
 archiveProject(id)
 listProjects({ includeArchived? })

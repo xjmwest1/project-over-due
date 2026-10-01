@@ -25,10 +25,10 @@
           "enum": ["mint", "sky", "violet", "amber", "rose", "slate"],
           "description": "Optional accent preset for project chrome; defaults to mint if omitted."
         },
-        "description": {
+        "note": {
           "type": "string",
           "maxLength": 2000,
-          "description": "Optional short project summary; links are not part of bundle v1."
+          "description": "Optional short project summary; project links are not part of bundle v1."
         }
       }
     },
@@ -54,7 +54,30 @@
           "note": {
             "type": "string",
             "maxLength": 2000
+          },
+          "links": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "$ref": "#/$defs/link" }
           }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 120
         }
       }
     }
