@@ -283,14 +283,26 @@ Use **@dnd-kit** with touch sensors and `TouchSensor` activation delay (~200ms) 
 ├── package.json
 ├── index.html
 ├── src/
-│   ├── app/                  routes, layout
-│   ├── components/           ui primitives, TaskCard, Lane, ProjectCard
-│   ├── features/             projects, board, task-detail, overview
+│   ├── app/                  router + root layout + *Page.tsx (one per route)
+│   ├── components/           shared UI primitives; cross-feature presentational pieces
+│   ├── features/             domain modules (projects, board, task-detail, overview)
 │   ├── lib/                  db, ids, metrics, ai-import-prompt, bundle-schema
 │   ├── stores/               projectStore, taskStore
 │   └── styles/               tokens, globals
 └── public/                   icons for PWA
 ```
+
+**No top-level `pages/` or `routes/` folder** — URL → screen wiring lives entirely under `app/` (see [Decisions log](#decisions-log)).
+
+| Folder | Owns | Does not own |
+|--------|------|----------------|
+| `app/` | `router.tsx`, layouts, thin `*Page.tsx` that compose features | Business logic, IndexedDB, heavy UI |
+| `features/` | Screens parts, modals, hooks used by one product area | Route table, path strings |
+| `components/` | Reusable buttons, sheets, cards used by 2+ features | Feature-specific workflows |
+| `lib/` | DB repository, validation, metrics, prompts | React components |
+| `stores/` | Zustand stores shared across features | Route definitions |
+
+**Import rule (MVP):** `features/*` may import from `components`, `lib`, and `stores`. Features should not import from sibling features; pages in `app/` wire them together. `app/` imports from `features/` and `components/` only as needed for each route.
 
 ### Persistence
 
@@ -389,7 +401,34 @@ importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
 2. **Default lanes:** Keep fixed five statuses or allow rename only?
 3. **Hosting:** Local-only PWA vs deployed URL for phone access away from home Wi‑Fi?
 
-**Decided:** Bulk project creation via **AI bundle** + in-app **copy prompt / paste JSON** (no MCP).
+---
+
+## Decisions log
+
+Recorded choices for implementation (newest related entries grouped by topic).
+
+### Product & data
+
+| Decision | Choice |
+|----------|--------|
+| Bulk project + tasks bootstrap | **AI bundle** + in-app copy prompt / paste JSON (no MCP, no HTTP API in MVP) |
+| Project home list order | Sort by `updatedAt` desc; **no** `sortOrder` on projects in MVP |
+| Project accent | `color` is a **user-editable preset** (`mint` \| `sky` \| `violet` \| `amber` \| `rose` \| `slate`); accent chrome only (card border/dot, board header) |
+| Project text field | **`note`** (optional plain text), not `description` |
+| Project links | `links: Link[]` on stored project; default `[]`; **not** in AI bundle v1 (edit in app after import) |
+| Task links | `links: Link[]` on each task; default `[]`; optional in AI bundle per task |
+| Shared link shape | `Link { url, label? }` — validate `https` on write |
+| Task lane order | Keep **`sortOrder` on tasks** (within lane) |
+| Storage | IndexedDB object stores: `projects`, `tasks`, `meta` — metrics derived, not stored |
+
+### Frontend structure
+
+| Decision | Choice |
+|----------|--------|
+| Routes + pages | **Combined under `src/app/`** — `router.tsx`, layouts, and one `*Page.tsx` per route; no separate `pages/` or `routes/` folder |
+| Feature folders | **Domain modules** (`features/projects`, `board`, `task-detail`, `overview`) — UI/logic for that area; **no** route configuration inside features |
+| Route pages | Thin: mount layout + import from the matching `features/*` module |
+| Cross-feature imports | Avoid feature → feature; compose in `app/*Page.tsx` |
 
 ---
 
