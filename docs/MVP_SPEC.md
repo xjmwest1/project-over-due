@@ -136,8 +136,7 @@ AppMeta {
 
 2. **Board (per project)**  
    - Header: back, project name, progress mini-bar; optional note + links entry (sheet or compact row)  
-   - Horizontal scroll **swim lanes** on mobile (one lane full-width optional setting later; MVP: horizontal snap scroll per lane column)  
-   - **Alternative MVP layout (recommended):** Vertical stack of lanes; each lane scrolls horizontally for tasks — easier thumb reach than tiny columns  
+   - **Layout (decided):** Vertical stack of the five fixed lanes; each lane scrolls **horizontally** for its task cards (see [mockup/lane-layout.html](../mockup/lane-layout.html))  
    - FAB or bottom bar: **Add task** (defaults to Backlog)  
    - Task card: title only; tap → detail sheet; long-press → drag handle mode  
 
@@ -374,10 +373,10 @@ importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
 - [ ] Export all data JSON (backup)
 - [ ] Lighthouse mobile pass, meta theme-color, safe-area insets
 
-### Phase 5 — Deploy (optional)
+### Phase 5 — Deploy (PWA hosting)
 
-- [ ] Static build + deploy URL
-- [ ] Document “Add to Home Screen” for iOS/Android
+- [ ] Static build + **deployed HTTPS URL** (e.g. Cloudflare Pages, Vercel, or homelab static host)
+- [ ] PWA installable from that URL; document “Add to Home Screen” for iOS/Android
 
 **MVP definition of done:** You can manage ≥3 projects with 20+ tasks each on a phone: add/edit/delete, move across all lanes, see remaining counts on home, **import a new project from AI-generated bundle JSON**, data persists after reload, installable as PWA.
 
@@ -392,14 +391,6 @@ importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
 - Search
 - Keyboard shortcuts on desktop
 - Light theme toggle
-
----
-
-## Open decisions (confirm before build)
-
-1. **Board layout:** Vertical lanes (recommended for mobile) vs horizontal column scroll like Linear desktop?
-2. **Default lanes:** Keep fixed five statuses or allow rename only?
-3. **Hosting:** Local-only PWA vs deployed URL for phone access away from home Wi‑Fi?
 
 ---
 
@@ -420,6 +411,9 @@ Recorded choices for implementation (newest related entries grouped by topic).
 | Shared link shape | `Link { url, label? }` — validate `https` on write |
 | Task lane order | Keep **`sortOrder` on tasks** (within lane) |
 | Storage | IndexedDB object stores: `projects`, `tasks`, `meta` — metrics derived, not stored |
+| Board layout | **Vertical lanes**, horizontal scroll within each lane (mobile-first); not column-style horizontal lane scroll |
+| Swim lanes | **Fixed five statuses** (Backlog, Ready, Doing, Blocked, Done) — no per-project or renameable lanes in MVP |
+| Hosting | **Static HTTPS deploy + PWA** — public URL for phone use off local Wi‑Fi; data stays client-side (IndexedDB) |
 
 ### Frontend structure
 
