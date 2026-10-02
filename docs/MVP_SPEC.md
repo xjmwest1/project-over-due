@@ -357,9 +357,9 @@ importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
 
 ### Phase 2 — Board + tasks (1 session)
 
-- [ ] Lane layout (vertical lanes, horizontal task scroll per lane)
-- [ ] Task CRUD, cards, detail sheet
-- [ ] Status change via sheet (ship before drag)
+- [x] Lane layout (vertical lanes, horizontal task scroll per lane) — home board + project filter
+- [x] Task CRUD, cards, detail sheet
+- [x] Status change via sheet (ship before drag)
 
 ### Phase 3 — Mobile moves (1 session)
 
