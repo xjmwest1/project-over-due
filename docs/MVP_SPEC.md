@@ -252,7 +252,6 @@ parseProjectBundleJson(raw: string): ProjectBundleV1 // strips fences, JSON.pars
 | Move task | Long-press drag between lanes **or** status chips in detail sheet |
 | Reorder within lane | Drag handle after long-press (same gesture system) |
 | Add task | FAB → inline title → save to Backlog |
-| Quick complete | Swipe right on card → Done (with undo toast 5s) |
 | Archive project | Settings on project; tasks stay but hidden from home |
 
 Use **@dnd-kit** with touch sensors and `TouchSensor` activation delay (~200ms) to avoid scroll conflicts.
@@ -363,8 +362,7 @@ importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
 
 ### Phase 3 — Mobile moves (1 session)
 
-- [ ] dnd-kit: drag across lanes + reorder
-- [ ] Swipe-to-done + undo toast
+- [ ] dnd-kit: drag across lanes + reorder (single-project board / `?p=` filter)
 - [ ] Touch/scroll conflict tuning
 
 ### Phase 4 — Overview + polish (½ session)
