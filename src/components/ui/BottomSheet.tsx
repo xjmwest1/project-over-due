@@ -1,4 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+
+const EXIT_DURATION_MS = 300
 
 type Props = {
   open: boolean
@@ -23,6 +25,13 @@ export function BottomSheet({
 }: Props) {
   const [mounted, setMounted] = useState(open)
   const [visible, setVisible] = useState(false)
+  const onClosedRef = useRef(onClosed)
+  const visibleRef = useRef(false)
+  const finishedCloseRef = useRef(false)
+
+  useEffect(() => {
+    onClosedRef.current = onClosed
+  })
 
   useEffect(() => {
     if (!open) return
@@ -35,25 +44,53 @@ export function BottomSheet({
 
   useEffect(() => {
     if (!animated) {
-      if (!open) onClosed?.()
+      if (!open) onClosedRef.current?.()
       return
     }
+
     if (open) {
+      finishedCloseRef.current = false
       setMounted(true)
-      const frame = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setVisible(true))
+      let innerFrame = 0
+      const outerFrame = requestAnimationFrame(() => {
+        innerFrame = requestAnimationFrame(() => {
+          visibleRef.current = true
+          setVisible(true)
+        })
       })
-      return () => cancelAnimationFrame(frame)
+      return () => {
+        cancelAnimationFrame(outerFrame)
+        cancelAnimationFrame(innerFrame)
+      }
     }
+
+    const shouldAnimateExit = visibleRef.current
+    visibleRef.current = false
     setVisible(false)
-  }, [open, animated, onClosed])
+
+    const reduceMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const delay =
+      reduceMotion || !shouldAnimateExit ? 0 : EXIT_DURATION_MS
+
+    const finishClose = () => {
+      if (finishedCloseRef.current) return
+      finishedCloseRef.current = true
+      setMounted(false)
+      onClosedRef.current?.()
+    }
+
+    const timeout = window.setTimeout(finishClose, delay)
+    return () => window.clearTimeout(timeout)
+  }, [open, animated])
 
   const handlePanelTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
-    if (!animated || e.propertyName !== 'transform') return
-    if (!visible && !open) {
-      setMounted(false)
-      onClosed?.()
-    }
+    if (!animated || open || e.propertyName !== 'transform') return
+    if (finishedCloseRef.current) return
+    finishedCloseRef.current = true
+    setMounted(false)
+    onClosedRef.current?.()
   }
 
   if (!animated) {
@@ -102,7 +139,7 @@ export function BottomSheet({
     <div className="fixed inset-0 z-40 flex flex-col justify-end">
       <button
         type="button"
-        className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ease-out ${
+        className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ease-out motion-reduce:transition-none ${
           visible ? 'opacity-100' : 'opacity-0'
         }`}
         aria-label="Close"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { Button } from '../../components/ui/Button'
 import { PROJECT_COLOR_STYLES } from '../../lib/colors'
@@ -60,11 +60,11 @@ export function TaskDetailSheet({
     setLinkLabel('')
   }, [open, task, project])
 
-  const clearDisplay = () => {
+  const clearDisplay = useCallback(() => {
     setDisplayTask(null)
     setDisplayProject(null)
     setValues(null)
-  }
+  }, [])
 
   const sheetTask = displayTask ?? (open ? task : null)
   const sheetProject = displayProject ?? (open ? project ?? null : null)
