@@ -4,10 +4,8 @@ import { Button } from '../components/ui/Button'
 import { QuickAddTaskSheet } from '../features/board/QuickAddTaskSheet'
 import { DraggableLaneBoard } from '../features/board/DraggableLaneBoard'
 import { UnifiedLaneBoard } from '../features/board/UnifiedLaneBoard'
-import { HomeViewToggle, type HomeView } from '../features/home/HomeViewToggle'
 import { ProjectStatusStrip } from '../features/home/ProjectStatusStrip'
 import { useHomeBoardData } from '../features/home/useHomeBoardData'
-import { ProgressOverview } from '../features/overview/ProgressOverview'
 import {
   ProjectFormSheet,
   type ProjectFormValues,
@@ -21,7 +19,6 @@ import type { Task } from '../lib/types'
 import { useProjectStore } from '../stores/projectStore'
 
 const PROJECT_PARAM = 'p'
-const VIEW_PARAM = 'view'
 
 export function ProjectsPage() {
   const projects = useProjectStore((s) => s.projects)
@@ -93,16 +90,6 @@ export function ProjectsPage() {
   }, [tasks, validProjectId])
 
   const showProjectChrome = validProjectId === null
-
-  const homeView: HomeView =
-    searchParams.get(VIEW_PARAM) === 'overview' ? 'overview' : 'board'
-
-  const setHomeView = (view: HomeView) => {
-    const next = new URLSearchParams(searchParams)
-    if (view === 'board') next.delete(VIEW_PARAM)
-    else next.set(VIEW_PARAM, view)
-    setSearchParams(next, { replace: true })
-  }
 
   const setProjectFilter = (projectId: string | null) => {
     const next = new URLSearchParams(searchParams)
@@ -204,9 +191,6 @@ export function ProjectsPage() {
             </Link>
           </div>
         </div>
-        {projects.length > 0 && validProjectId === null ? (
-          <HomeViewToggle value={homeView} onChange={setHomeView} />
-        ) : null}
         {projects.length > 0 ? (
           <ProjectStatusStrip
             projects={projects}
@@ -240,16 +224,6 @@ export function ProjectsPage() {
             tasks={filteredTasks}
             onTaskSelect={openTask}
             onTasksMoved={afterTaskChange}
-          />
-        ) : homeView === 'overview' ? (
-          <ProgressOverview
-            projects={projects}
-            metricsByProjectId={metricsByProjectId}
-            globalMetrics={globalMetrics}
-            onSelectProject={(id) => {
-              setProjectFilter(id)
-              setHomeView('board')
-            }}
           />
         ) : (
           <UnifiedLaneBoard
