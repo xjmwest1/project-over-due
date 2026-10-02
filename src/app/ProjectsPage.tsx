@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { QuickAddTaskSheet } from '../features/board/QuickAddTaskSheet'
+import { DraggableLaneBoard } from '../features/board/DraggableLaneBoard'
 import { UnifiedLaneBoard } from '../features/board/UnifiedLaneBoard'
 import { ProjectStatusStrip } from '../features/home/ProjectStatusStrip'
 import { useHomeBoardData } from '../features/home/useHomeBoardData'
@@ -211,6 +212,12 @@ export function ProjectsPage() {
               Plan with AI
             </Link>
           </div>
+        ) : validProjectId ? (
+          <DraggableLaneBoard
+            tasks={filteredTasks}
+            onTaskSelect={openTask}
+            onTasksMoved={afterTaskChange}
+          />
         ) : (
           <UnifiedLaneBoard
             tasks={filteredTasks}
