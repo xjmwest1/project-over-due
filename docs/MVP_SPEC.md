@@ -362,8 +362,8 @@ importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
 
 ### Phase 3 — Mobile moves (1 session)
 
-- [ ] dnd-kit: drag across lanes + reorder (single-project board / `?p=` filter)
-- [ ] Touch/scroll conflict tuning
+- [x] dnd-kit: drag across lanes + reorder (single-project board / `?p=` filter)
+- [x] Touch/scroll conflict tuning
 
 ### Phase 4 — Overview + polish (½ session)
 
