@@ -124,7 +124,6 @@ export function TaskDetailSheet({
     <BottomSheet
       open={open}
       title="Task"
-      animated
       onClose={onClose}
       onClosed={clearDisplay}
     >

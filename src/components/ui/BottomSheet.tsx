@@ -8,7 +8,7 @@ type Props = {
   onClose: () => void
   children: ReactNode
   footer?: ReactNode
-  /** Slide/fade enter and exit (panel + backdrop). */
+  /** Slide/fade enter and exit (panel + backdrop). Defaults on. */
   animated?: boolean
   /** Fired after exit animation finishes when `animated` is true. */
   onClosed?: () => void
@@ -20,7 +20,7 @@ export function BottomSheet({
   onClose,
   children,
   footer,
-  animated = false,
+  animated = true,
   onClosed,
 }: Props) {
   const [mounted, setMounted] = useState(open)
