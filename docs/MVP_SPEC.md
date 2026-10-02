@@ -375,8 +375,9 @@ exportAllData(): Promise<AppBackupV1>
 
 ### Phase 5 — Deploy (PWA hosting)
 
-- [ ] Static build + **deployed HTTPS URL** (e.g. Cloudflare Pages, Vercel, or homelab static host)
-- [ ] PWA installable from that URL; document “Add to Home Screen” for iOS/Android
+- [x] Static build + Netlify config (`netlify.toml`, SPA fallback)
+- [ ] **Deployed HTTPS URL** on Netlify (connect repo in dashboard; see [DEPLOY.md](DEPLOY.md))
+- [x] PWA install docs — “Add to Home Screen” for iOS/Android ([DEPLOY.md](DEPLOY.md))
 
 **MVP definition of done:** You can manage ≥3 projects with 20+ tasks each on a phone: add/edit/delete, move across all lanes, see remaining counts on home, **import a new project from AI-generated bundle JSON**, data persists after reload, installable as PWA.
 

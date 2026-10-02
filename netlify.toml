@@ -1,0 +1,15 @@
+# Netlify — static PWA (Vite + React Router)
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# SPA: deep links (/import, /projects/:id) must serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
