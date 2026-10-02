@@ -27,9 +27,12 @@ export const TaskLaneCard = forwardRef<HTMLButtonElement | HTMLElement, TaskLane
   ) {
     const muted = task.status === 'done'
     const accent = project ? PROJECT_COLOR_STYLES[project.color].border : ''
+    const draggable = Boolean(dragHandleProps)
     const baseClass = `w-[168px] shrink-0 snap-start rounded-[10px] border border-border bg-surface px-3 py-3 text-left text-sm font-medium leading-snug tracking-tight touch-manipulation ${
       muted ? 'opacity-55 font-normal' : ''
-    } ${project ? `border-l-2 ${accent}` : ''} ${className}`
+    } ${draggable ? 'select-none [-webkit-touch-callout:none]' : ''} ${
+      project ? `border-l-2 ${accent}` : ''
+    } ${className}`
 
     const inner = children ?? (
       <>
@@ -49,7 +52,7 @@ export const TaskLaneCard = forwardRef<HTMLButtonElement | HTMLElement, TaskLane
           ref={ref as React.Ref<HTMLButtonElement>}
           onClick={onSelect}
           className={`${baseClass} hover:bg-surface-raised`}
-          style={style}
+          style={draggable ? { ...style, touchAction: 'manipulation' } : style}
           {...dragHandleProps}
         >
           {inner}

@@ -110,9 +110,10 @@ export function TaskDetailSheet({
   }
 
   const removeLink = (index: number) => {
-    setValues((v) =>
-      v ? { ...v, links: v.links.filter((_, i) => i !== index) } : v,
-    )
+    setValues((v) => {
+      const base = v ?? sheetValues
+      return { ...base, links: base.links.filter((_, i) => i !== index) }
+    })
   }
 
   const accent = sheetProject
