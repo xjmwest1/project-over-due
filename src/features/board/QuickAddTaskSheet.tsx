@@ -42,7 +42,7 @@ export function QuickAddTaskSheet({
   }
 
   return (
-    <BottomSheet open={open} title="Add task" animated onClose={onClose}>
+    <BottomSheet open={open} title="Add task" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <p className="text-xs text-muted">
           Adds to <span className="font-medium text-text">{projectName}</span> ·

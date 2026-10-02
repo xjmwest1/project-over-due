@@ -168,7 +168,7 @@ export function ProjectsPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="sticky top-0 z-10 bg-bg/95 px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm">
+      <header className="shrink-0 bg-bg px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h1 className="text-xl font-semibold tracking-tight">Projects</h1>
           <div className="flex gap-2">
