@@ -39,6 +39,10 @@ export function TaskDetailSheet({
   onDelete,
 }: Props) {
   const [values, setValues] = useState<TaskFormValues | null>(null)
+  const [displayTask, setDisplayTask] = useState<Task | null>(null)
+  const [displayProject, setDisplayProject] = useState<Project | null | undefined>(
+    null,
+  )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -47,25 +51,41 @@ export function TaskDetailSheet({
 
   useEffect(() => {
     if (!open || !task) return
+    setDisplayTask(task)
+    setDisplayProject(project ?? null)
     setValues(valuesFromTask(task))
     setError(null)
     setConfirmDelete(false)
     setLinkUrl('')
     setLinkLabel('')
-  }, [open, task?.id])
+  }, [open, task, project])
 
-  if (!task || !values) {
+  const clearDisplay = () => {
+    setDisplayTask(null)
+    setDisplayProject(null)
+    setValues(null)
+  }
+
+  const sheetTask = displayTask ?? (open ? task : null)
+  const sheetProject = displayProject ?? (open ? project ?? null : null)
+  const sheetValues =
+    values ?? (open && task ? valuesFromTask(task) : null)
+
+  if (!sheetTask || !sheetValues) {
     return null
   }
+
+  const taskId = sheetTask.id
+  const formValues = values ?? sheetValues
 
   const save = async () => {
     setError(null)
     setSaving(true)
     try {
-      await onSave(task.id, {
-        ...values,
-        title: values.title.trim(),
-        note: values.note.trim(),
+      await onSave(taskId, {
+        ...formValues,
+        title: formValues.title.trim(),
+        note: formValues.note.trim(),
       })
       onClose()
     } catch (e) {
@@ -78,42 +98,53 @@ export function TaskDetailSheet({
   const addLink = () => {
     const url = linkUrl.trim()
     if (!url) return
-    setValues((v) =>
-      v
-        ? {
-            ...v,
-            links: [...v.links, { url, label: linkLabel.trim() || undefined }],
-          }
-        : v,
-    )
+    setValues((v) => {
+      const base = v ?? sheetValues
+      return {
+        ...base,
+        links: [...base.links, { url, label: linkLabel.trim() || undefined }],
+      }
+    })
     setLinkUrl('')
     setLinkLabel('')
   }
 
   const removeLink = (index: number) => {
-    setValues((v) =>
-      v ? { ...v, links: v.links.filter((_, i) => i !== index) } : v,
-    )
+    setValues((v) => {
+      const base = v ?? sheetValues
+      return { ...base, links: base.links.filter((_, i) => i !== index) }
+    })
   }
 
-  const accent = project ? PROJECT_COLOR_STYLES[project.color].dot : ''
+  const accent = sheetProject
+    ? PROJECT_COLOR_STYLES[sheetProject.color].dot
+    : ''
 
   return (
-    <BottomSheet open={open} title="Task" onClose={onClose}>
+    <BottomSheet
+      open={open}
+      title="Task"
+      animated
+      onClose={onClose}
+      onClosed={clearDisplay}
+    >
       <div className="flex flex-col gap-4">
-        {project ? (
+        {sheetProject ? (
           <p className="flex items-center gap-2 text-xs text-muted">
             <span className={`h-2 w-2 rounded-full ${accent}`} aria-hidden />
-            {project.name}
+            {sheetProject.name}
           </p>
         ) : null}
 
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-muted">Title</span>
           <input
-            value={values.title}
+            value={formValues.title}
             onChange={(e) =>
-              setValues((v) => (v ? { ...v, title: e.target.value } : v))
+              setValues((v) => {
+                const base = v ?? sheetValues
+                return { ...base, title: e.target.value }
+              })
             }
             className="min-h-11 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-sm outline-none focus:border-white/20"
           />
@@ -123,13 +154,16 @@ export function TaskDetailSheet({
           <span className="mb-2 block text-xs font-medium text-muted">Status</span>
           <div className="flex flex-wrap gap-1.5">
             {TASK_STATUSES.map((status) => {
-              const active = values.status === status
+              const active = formValues.status === status
               return (
                 <button
                   key={status}
                   type="button"
                   onClick={() =>
-                    setValues((v) => (v ? { ...v, status } : v))
+                    setValues((v) => {
+                      const base = v ?? sheetValues
+                      return { ...base, status }
+                    })
                   }
                   className={`min-h-9 rounded-full px-3 text-xs font-medium transition-colors ${
                     active
@@ -147,9 +181,12 @@ export function TaskDetailSheet({
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-muted">Note</span>
           <textarea
-            value={values.note}
+            value={formValues.note}
             onChange={(e) =>
-              setValues((v) => (v ? { ...v, note: e.target.value } : v))
+              setValues((v) => {
+                const base = v ?? sheetValues
+                return { ...base, note: e.target.value }
+              })
             }
             rows={4}
             maxLength={2000}
@@ -161,7 +198,7 @@ export function TaskDetailSheet({
         <div>
           <span className="mb-2 block text-xs font-medium text-muted">Links (https)</span>
           <ul className="mb-2 flex flex-col gap-1">
-            {values.links.map((link, i) => (
+            {formValues.links.map((link, i) => (
               <li
                 key={`${link.url}-${i}`}
                 className="flex items-center justify-between gap-2 rounded-[var(--radius-card)] border border-border px-3 py-2 text-xs"
@@ -201,7 +238,7 @@ export function TaskDetailSheet({
         <Button
           type="button"
           className="w-full bg-[#fafafa] text-bg hover:bg-white"
-          disabled={saving || !values.title.trim()}
+          disabled={saving || !formValues.title.trim()}
           onClick={() => void save()}
         >
           {saving ? 'Saving…' : 'Save'}
@@ -222,7 +259,7 @@ export function TaskDetailSheet({
               <Button
                 type="button"
                 className="flex-1 border-accent-rose/40 text-accent-rose"
-                onClick={() => void onDelete(task.id).then(onClose)}
+                onClick={() => void onDelete(taskId).then(onClose)}
               >
                 Delete
               </Button>

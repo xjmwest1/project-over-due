@@ -1,7 +1,7 @@
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   closestCenter,
   useDroppable,
@@ -19,7 +19,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TASK_STATUSES } from '../../lib/status-labels'
-import type { Task, TaskStatus } from '../../lib/types'
+import type { Project, Task, TaskStatus } from '../../lib/types'
 import {
   moveBetweenLanes,
   persistLaneOrder,
@@ -31,6 +31,8 @@ import { TaskLaneCard } from './TaskLaneCard'
 
 type Props = {
   tasks: Task[]
+  projectsById?: Map<string, Project>
+  showProjectChrome?: boolean
   onTaskSelect: (task: Task) => void
   onTasksMoved: () => Promise<void>
 }
@@ -39,11 +41,15 @@ function LaneDropZone({
   status,
   taskIds,
   tasksById,
+  projectsById,
+  showProjectChrome,
   onTaskSelect,
 }: {
   status: TaskStatus
   taskIds: string[]
   tasksById: Map<string, Task>
+  projectsById?: Map<string, Project>
+  showProjectChrome?: boolean
   onTaskSelect: (task: Task) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -78,6 +84,11 @@ function LaneDropZone({
             <SortableTaskCard
               key={id}
               task={task}
+              project={
+                showProjectChrome
+                  ? projectsById?.get(task.projectId)
+                  : undefined
+              }
               onSelect={() => onTaskSelect(task)}
             />
           )
@@ -89,9 +100,11 @@ function LaneDropZone({
 
 function SortableTaskCard({
   task,
+  project,
   onSelect,
 }: {
   task: Task
+  project?: Project
   onSelect: () => void
 }) {
   const {
@@ -117,6 +130,7 @@ function SortableTaskCard({
     <TaskLaneCard
       ref={setNodeRef}
       task={task}
+      project={project}
       onSelect={onSelect}
       style={style}
       className={isDragging ? 'shadow-md ring-1 ring-white/10' : ''}
@@ -127,6 +141,8 @@ function SortableTaskCard({
 
 export function DraggableLaneBoard({
   tasks,
+  projectsById,
+  showProjectChrome = false,
   onTaskSelect,
   onTasksMoved,
 }: Props) {
@@ -153,11 +169,11 @@ export function DraggableLaneBoard({
   }, [lanes])
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 8 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 6 },
+      activationConstraint: { delay: 250, tolerance: 8 },
     }),
   )
 
@@ -235,6 +251,8 @@ export function DraggableLaneBoard({
                 status={status}
                 taskIds={taskIds}
                 tasksById={tasksById}
+                projectsById={projectsById}
+                showProjectChrome={showProjectChrome}
                 onTaskSelect={onTaskSelect}
               />
             </LaneSection>
