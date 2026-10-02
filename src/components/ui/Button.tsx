@@ -22,7 +22,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`inline-flex min-h-11 items-center justify-center rounded-[var(--radius-card)] px-4 text-sm font-medium transition-colors disabled:opacity-40 ${variantClass[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center rounded-[var(--radius-card)] px-4 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/35 disabled:opacity-40 ${variantClass[variant]} ${className}`}
       {...props}
     />
   )

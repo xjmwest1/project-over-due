@@ -15,9 +15,11 @@ import type {
 } from './types'
 import { PROJECT_COLORS } from './types'
 import type { ProjectBundleV1 } from './bundle-schema'
+import { BACKUP_VERSION, type AppBackupV1 } from './backup-export'
 
 export { parseProjectBundleJson } from './bundle-import'
 export type { ProjectBundleV1 } from './bundle-schema'
+export type { AppBackupV1 } from './backup-export'
 
 const DB_NAME = 'home-projects'
 const DB_VERSION = 1
@@ -338,4 +340,31 @@ export async function getGlobalMetrics(): Promise<GlobalMetrics> {
     tasksByProject.set(p.id, await listTasksByProject(p.id))
   }
   return computeGlobalMetrics(projects, tasksByProject)
+}
+
+/** Full local backup for device migration (distinct from AI bundle v1). */
+export async function exportAllData(): Promise<AppBackupV1> {
+  const db = await getDb()
+  const meta = await getMetaRecord()
+  const projects = await db.getAll('projects')
+  const tasks = await db.getAll('tasks')
+  projects.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  )
+  tasks.sort((a, b) => {
+    if (a.projectId !== b.projectId) {
+      return a.projectId.localeCompare(b.projectId)
+    }
+    if (a.status !== b.status) {
+      return a.status.localeCompare(b.status)
+    }
+    return a.sortOrder - b.sortOrder
+  })
+  return {
+    version: BACKUP_VERSION,
+    exportedAt: nowIso(),
+    meta,
+    projects,
+    tasks,
+  }
 }

@@ -4,8 +4,10 @@ import { Button } from '../components/ui/Button'
 import { QuickAddTaskSheet } from '../features/board/QuickAddTaskSheet'
 import { DraggableLaneBoard } from '../features/board/DraggableLaneBoard'
 import { UnifiedLaneBoard } from '../features/board/UnifiedLaneBoard'
+import { HomeViewToggle, type HomeView } from '../features/home/HomeViewToggle'
 import { ProjectStatusStrip } from '../features/home/ProjectStatusStrip'
 import { useHomeBoardData } from '../features/home/useHomeBoardData'
+import { ProgressOverview } from '../features/overview/ProgressOverview'
 import {
   ProjectFormSheet,
   type ProjectFormValues,
@@ -19,6 +21,7 @@ import type { Task } from '../lib/types'
 import { useProjectStore } from '../stores/projectStore'
 
 const PROJECT_PARAM = 'p'
+const VIEW_PARAM = 'view'
 
 export function ProjectsPage() {
   const projects = useProjectStore((s) => s.projects)
@@ -90,6 +93,16 @@ export function ProjectsPage() {
   }, [tasks, validProjectId])
 
   const showProjectChrome = validProjectId === null
+
+  const homeView: HomeView =
+    searchParams.get(VIEW_PARAM) === 'overview' ? 'overview' : 'board'
+
+  const setHomeView = (view: HomeView) => {
+    const next = new URLSearchParams(searchParams)
+    if (view === 'board') next.delete(VIEW_PARAM)
+    else next.set(VIEW_PARAM, view)
+    setSearchParams(next, { replace: true })
+  }
 
   const setProjectFilter = (projectId: string | null) => {
     const next = new URLSearchParams(searchParams)
@@ -169,7 +182,7 @@ export function ProjectsPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="sticky top-0 z-10 bg-bg/95 px-4 pb-2 pt-4 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 bg-bg/95 px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h1 className="text-xl font-semibold tracking-tight">Projects</h1>
           <div className="flex gap-2">
@@ -182,8 +195,18 @@ export function ProjectsPage() {
             >
               Import
             </Link>
+            <Link
+              to="/settings"
+              className="inline-flex min-h-10 items-center rounded-[var(--radius-card)] border border-border px-3 text-xs font-medium text-muted hover:text-text"
+              aria-label="Settings"
+            >
+              Settings
+            </Link>
           </div>
         </div>
+        {projects.length > 0 && validProjectId === null ? (
+          <HomeViewToggle value={homeView} onChange={setHomeView} />
+        ) : null}
         {projects.length > 0 ? (
           <ProjectStatusStrip
             projects={projects}
@@ -217,6 +240,16 @@ export function ProjectsPage() {
             tasks={filteredTasks}
             onTaskSelect={openTask}
             onTasksMoved={afterTaskChange}
+          />
+        ) : homeView === 'overview' ? (
+          <ProgressOverview
+            projects={projects}
+            metricsByProjectId={metricsByProjectId}
+            globalMetrics={globalMetrics}
+            onSelectProject={(id) => {
+              setProjectFilter(id)
+              setHomeView('board')
+            }}
           />
         ) : (
           <UnifiedLaneBoard

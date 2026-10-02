@@ -4,6 +4,7 @@ import { ImportPage } from './ImportPage'
 import { NotFoundPage } from './NotFoundPage'
 import { ProjectsPage } from './ProjectsPage'
 import { RootLayout } from './RootLayout'
+import { SettingsPage } from './SettingsPage'
 
 export const router = createBrowserRouter([
   {
@@ -13,6 +14,7 @@ export const router = createBrowserRouter([
       { index: true, element: <ProjectsPage /> },
       { path: 'projects/:id', element: <BoardPage /> },
       { path: 'import', element: <ImportPage /> },
+      { path: 'settings', element: <SettingsPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
