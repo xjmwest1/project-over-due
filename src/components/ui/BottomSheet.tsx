@@ -32,7 +32,7 @@ export function BottomSheet({ open, title, onClose, children, footer }: Props) {
         role="dialog"
         aria-modal
         aria-labelledby="sheet-title"
-        className="relative max-h-[min(90dvh,640px)] w-full max-w-lg self-center overflow-hidden rounded-t-[var(--radius-sheet)] border border-border bg-bg shadow-2xl"
+        className="relative max-h-[min(90dvh,640px)] w-full max-w-lg self-center overflow-hidden rounded-t-[var(--radius-sheet)] border border-border bg-bg pb-[env(safe-area-inset-bottom)] shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 id="sheet-title" className="text-base font-semibold tracking-tight">

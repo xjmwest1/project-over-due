@@ -150,7 +150,6 @@ AppMeta {
 4. **Progress overview (segment on home or tab)**  
    - Total remaining tasks  
    - Per-project bars sorted by remaining count  
-   - “Blocked” highlight if any blocked > 0  
 
 5. **Import from AI (bundle flow)** — see [AI project bundle import](#ai-project-bundle-import)
 
@@ -334,6 +333,9 @@ getGlobalMetrics()
 // AI bundle
 parseProjectBundleJson(raw: string): ProjectBundleV1
 importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
+
+// Backup
+exportAllData(): Promise<AppBackupV1>
 ```
 
 ---
@@ -367,9 +369,9 @@ importProjectBundle(bundle: ProjectBundleV1): Promise<{ projectId: string }>
 
 ### Phase 4 — Overview + polish (½ session)
 
-- [ ] Global progress view / blocked callout
-- [ ] Export all data JSON (backup)
-- [ ] Lighthouse mobile pass, meta theme-color, safe-area insets
+- [x] Global progress view
+- [x] Export all data JSON (backup)
+- [x] General mobile polish: `theme-color`, safe-area insets, small a11y/touch fixes (no formal Lighthouse run required)
 
 ### Phase 5 — Deploy (PWA hosting)
 

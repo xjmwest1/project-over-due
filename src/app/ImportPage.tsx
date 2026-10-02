@@ -3,7 +3,7 @@ import { ImportFlow } from '../features/import/ImportFlow'
 
 export function ImportPage() {
   return (
-    <div className="flex flex-1 flex-col px-4 py-6">
+    <div className="flex flex-1 flex-col px-4 pb-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <Link to="/" className="mb-4 text-sm text-muted hover:text-text">
         ← Projects
       </Link>
