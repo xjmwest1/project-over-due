@@ -14,6 +14,7 @@ type Props = {
   tasks: Task[]
   projectsById: Map<string, Project>
   showProjectChrome: boolean
+  onTaskSelect?: (task: Task) => void
 }
 
 function tasksForLane(tasks: Task[], status: TaskStatus): Task[] {
@@ -25,7 +26,12 @@ function tasksForLane(tasks: Task[], status: TaskStatus): Task[] {
     )
 }
 
-export function UnifiedLaneBoard({ tasks, projectsById, showProjectChrome }: Props) {
+export function UnifiedLaneBoard({
+  tasks,
+  projectsById,
+  showProjectChrome,
+  onTaskSelect,
+}: Props) {
   return (
     <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-0 pb-24 pt-3">
       {TASK_STATUSES.map((status) => {
@@ -55,6 +61,7 @@ export function UnifiedLaneBoard({ tasks, projectsById, showProjectChrome }: Pro
                         ? projectsById.get(task.projectId)
                         : undefined
                     }
+                    onSelect={onTaskSelect ? () => onTaskSelect(task) : undefined}
                   />
                 ))}
               </div>
@@ -69,25 +76,36 @@ export function UnifiedLaneBoard({ tasks, projectsById, showProjectChrome }: Pro
 function TaskLaneCard({
   task,
   project,
+  onSelect,
 }: {
   task: Task
   project?: Project
+  onSelect?: () => void
 }) {
   const muted = task.status === 'done'
   const accent = project ? PROJECT_COLOR_STYLES[project.color].border : ''
+  const baseClass = `w-[168px] shrink-0 snap-start rounded-[10px] border border-border bg-surface px-3 py-3 text-left text-sm font-medium leading-snug tracking-tight ${
+    muted ? 'opacity-55 font-normal' : ''
+  } ${project ? `border-l-2 ${accent}` : ''}`
 
-  return (
-    <article
-      className={`w-[168px] shrink-0 snap-start rounded-[10px] border border-border bg-surface px-3 py-3 text-sm font-medium leading-snug tracking-tight ${
-        muted ? 'opacity-55 font-normal' : ''
-      } ${project ? `border-l-2 ${accent}` : ''}`}
-    >
+  const inner = (
+    <>
       {project ? (
         <p className="mb-1 truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
           {project.name}
         </p>
       ) : null}
       <p className="line-clamp-3">{task.title}</p>
-    </article>
+    </>
   )
+
+  if (onSelect) {
+    return (
+      <button type="button" onClick={onSelect} className={`${baseClass} hover:bg-surface-raised`}>
+        {inner}
+      </button>
+    )
+  }
+
+  return <article className={baseClass}>{inner}</article>
 }
