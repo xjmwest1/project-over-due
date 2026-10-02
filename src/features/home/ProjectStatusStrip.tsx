@@ -32,11 +32,11 @@ export function ProjectStatusStrip({
     : -1
 
   return (
-    <div className="border-b border-border pb-3">
+    <div className="overflow-hidden border-b border-border pb-3">
       <div
         className={`flex items-stretch gap-2 px-4 ${
           isFiltered
-            ? 'overflow-hidden'
+            ? ''
             : 'overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
         }`}
       >
