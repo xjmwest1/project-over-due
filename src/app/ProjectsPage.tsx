@@ -168,8 +168,8 @@ export function ProjectsPage() {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
-      <header className="shrink-0 bg-bg px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
-        <div className="mb-3 flex items-center justify-between gap-3">
+      <header className="shrink-0 bg-bg pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
+        <div className="mb-3 flex items-center justify-between gap-3 px-4">
           <h1 className="text-xl font-semibold tracking-tight">Projects</h1>
           <div className="flex gap-2">
             <Button type="button" variant="secondary" className="min-h-10 px-3 text-xs" onClick={openCreate}>
