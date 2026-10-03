@@ -48,6 +48,8 @@ export function ProjectStatusStrip({
   const trackRef = useRef<HTMLDivElement>(null)
   const prevSelectedRef = useRef<string | null>(null)
   const lastTrackIndexRef = useRef(0)
+  // Scroll offset captured when entering filter; leave animates back to it.
+  const enterScrollRef = useRef(0)
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Preserve the expanded card id briefly while the exit animation runs.
   const [heldExpandedId, setHeldExpandedId] = useState<string | null>(null)
@@ -93,6 +95,7 @@ export function ProjectStatusStrip({
       // Cards stay mounted; only transform/width change.
       const scrollLeft = viewport.scrollLeft
       lastTrackIndexRef.current = selectedTrackIndex
+      enterScrollRef.current = scrollLeft
       // Commit selection immediately so a later clear can detect "leaving".
       // Do not rewind this in cleanup — that made unfilter a no-op after enter.
       prevSelectedRef.current = selectedProjectId
@@ -128,13 +131,27 @@ export function ProjectStatusStrip({
 
     if (leaving) {
       const leaveOffset = lastTrackIndexRef.current * (CARD_WIDTH + CARD_GAP)
+      const restoreScroll = enterScrollRef.current
       const leaveFromId = prev
-      // Keep expanding the same card while it shrinks back.
+      // Reverse FLIP: shrink in place from the expanded pose, while the track
+      // slides back so neighbors on both sides re-enter the viewport.
       setHeldExpandedId(leaveFromId)
       setClipped(true)
-      setTransitionsOn(true)
-      setSelectedWidth(CARD_WIDTH)
+      setTransitionsOn(false)
       setShift(-leaveOffset)
+      setSelectedWidth(measureExpandedWidth())
+
+      void track.offsetWidth
+
+      let raf2 = 0
+      const raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          if (cancelled) return
+          setTransitionsOn(true)
+          setSelectedWidth(CARD_WIDTH)
+          setShift(-restoreScroll)
+        })
+      })
 
       exitTimerRef.current = setTimeout(() => {
         if (cancelled) return
@@ -144,14 +161,16 @@ export function ProjectStatusStrip({
         setClipped(false)
         setShift(0)
         setSelectedWidth(CARD_WIDTH)
-        if (viewportRef.current && leaveOffset > 0) {
-          viewportRef.current.scrollLeft = leaveOffset
+        if (viewportRef.current) {
+          viewportRef.current.scrollLeft = restoreScroll
         }
         exitTimerRef.current = null
       }, ANIMATION_MS)
 
       return () => {
         cancelled = true
+        cancelAnimationFrame(raf1)
+        cancelAnimationFrame(raf2)
         if (exitTimerRef.current) {
           clearTimeout(exitTimerRef.current)
           exitTimerRef.current = null
@@ -205,10 +224,10 @@ export function ProjectStatusStrip({
     <div className="border-b border-border pb-3">
       <div
         ref={viewportRef}
-        className={`min-w-0 w-full px-4 ${
+        className={`min-w-0 w-full px-4 pb-1 ${
           clipped
             ? 'overflow-hidden'
-            : 'overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+            : 'overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
         }`}
       >
         <div
