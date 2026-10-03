@@ -5,7 +5,6 @@ import type { Project, ProjectMetrics } from '../../lib/types'
 
 const CARD_WIDTH = 168
 const CARD_GAP = 8 // gap-2
-const CLOSE_BTN = 44 // w-11
 const ANIMATION_MS = 300
 
 type Props = {
@@ -77,7 +76,9 @@ export function ProjectStatusStrip({
       selectedTrackIndex >= 0
         ? selectedTrackIndex * (CARD_WIDTH + CARD_GAP)
         : 0
-    const targetWidth = Math.max(CARD_WIDTH, viewport.clientWidth)
+
+    const measureExpandedWidth = () =>
+      Math.max(CARD_WIDTH, viewport.clientWidth)
 
     const entering = prev == null && selectedProjectId != null
     const leaving = prev != null && selectedProjectId == null
@@ -101,7 +102,8 @@ export function ProjectStatusStrip({
         if (cancelled) return
         setTransitionsOn(true)
         setShift(-cardOffset)
-        setSelectedWidth(targetWidth)
+        // Measure after padding is removed (clipped → full-bleed).
+        setSelectedWidth(measureExpandedWidth())
       }
 
       // Double rAF: first frame commits the locked pose; second starts tween.
@@ -159,7 +161,7 @@ export function ProjectStatusStrip({
       setHeldExpandedId(selectedProjectId)
       setClipped(true)
       setShift(-cardOffset)
-      setSelectedWidth(targetWidth)
+      setSelectedWidth(measureExpandedWidth())
     }
 
     prevSelectedRef.current = selectedProjectId
@@ -189,81 +191,69 @@ export function ProjectStatusStrip({
 
   return (
     <div className="border-b border-border pb-3">
-      <div className="flex items-stretch gap-2 px-4">
+      <div
+        ref={viewportRef}
+        className={`min-w-0 w-full ${
+          filtering ? '' : 'px-4'
+        } ${
+          clipped
+            ? 'overflow-hidden'
+            : 'overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+        }`}
+      >
         <div
-          ref={viewportRef}
-          className={`min-w-0 flex-1 ${
-            clipped
-              ? 'overflow-hidden'
-              : 'overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-          }`}
+          ref={trackRef}
+          className="flex items-stretch gap-2 motion-reduce:!transition-none"
+          style={{
+            transform: `translateX(${shift}px)`,
+            transition: trackTransition,
+          }}
         >
-          <div
-            ref={trackRef}
-            className="flex items-stretch gap-2 motion-reduce:!transition-none"
-            style={{
-              transform: `translateX(${shift}px)`,
-              transition: trackTransition,
-            }}
-          >
-            <ProjectStatusCard
-              name="All projects"
-              selected={selectedProjectId === null && !filtering}
-              width={CARD_WIDTH}
-              inert={filtering}
-              done={globalMetrics.done}
-              remaining={globalMetrics.remaining}
-              total={globalMetrics.total}
-              progress={globalMetrics.progress}
-              onSelect={() => onSelectProject(null)}
-            />
-            {projects.map((project) => {
-              const m = metricsByProjectId.get(project.id)
-              const styles = PROJECT_COLOR_STYLES[project.color]
-              const isExpandedCard = expandedId === project.id
-              return (
-                <ProjectStatusCard
-                  key={project.id}
-                  name={project.name}
-                  selected={
-                    selectedProjectId === project.id ||
-                    (filtering && isExpandedCard)
-                  }
-                  width={isExpandedCard ? selectedWidth : CARD_WIDTH}
-                  expanded={isExpandedCard && selectedWidth > CARD_WIDTH}
-                  inert={filtering && !isExpandedCard}
-                  widthTransition={isExpandedCard ? widthTransition : 'none'}
-                  done={m?.done ?? 0}
-                  remaining={m?.remaining ?? 0}
-                  total={m?.total ?? 0}
-                  progress={m?.progress ?? 0}
-                  dotClassName={styles.dot}
-                  fillClassName={styles.dot}
-                  blocked={m?.byStatus.blocked ?? 0}
-                  onSelect={() => onSelectProject(project.id)}
-                  onEdit={
-                    onEditProject ? () => onEditProject(project.id) : undefined
-                  }
-                />
-              )
-            })}
-          </div>
+          <ProjectStatusCard
+            name="All projects"
+            selected={selectedProjectId === null && !filtering}
+            width={CARD_WIDTH}
+            inert={filtering}
+            done={globalMetrics.done}
+            remaining={globalMetrics.remaining}
+            total={globalMetrics.total}
+            progress={globalMetrics.progress}
+            onSelect={() => onSelectProject(null)}
+          />
+          {projects.map((project) => {
+            const m = metricsByProjectId.get(project.id)
+            const styles = PROJECT_COLOR_STYLES[project.color]
+            const isExpandedCard = expandedId === project.id
+            return (
+              <ProjectStatusCard
+                key={project.id}
+                name={project.name}
+                selected={
+                  selectedProjectId === project.id ||
+                  (filtering && isExpandedCard)
+                }
+                width={isExpandedCard ? selectedWidth : CARD_WIDTH}
+                expanded={isExpandedCard && selectedWidth > CARD_WIDTH}
+                inert={filtering && !isExpandedCard}
+                widthTransition={isExpandedCard ? widthTransition : 'none'}
+                done={m?.done ?? 0}
+                remaining={m?.remaining ?? 0}
+                total={m?.total ?? 0}
+                progress={m?.progress ?? 0}
+                dotClassName={styles.dot}
+                fillClassName={styles.dot}
+                blocked={m?.byStatus.blocked ?? 0}
+                onSelect={() => onSelectProject(project.id)}
+                onEdit={
+                  onEditProject ? () => onEditProject(project.id) : undefined
+                }
+                onClearFilter={
+                  isExpandedCard ? () => onSelectProject(null) : undefined
+                }
+              />
+            )
+          })}
         </div>
-        <button
-          type="button"
-          aria-label="Show all projects"
-          onClick={() => onSelectProject(null)}
-          className={`flex shrink-0 items-center justify-center rounded-[var(--radius-card)] border border-border bg-surface text-lg text-muted transition-opacity duration-300 ease-out motion-reduce:transition-none hover:bg-surface-raised hover:text-text ${
-            isFiltered
-              ? 'opacity-100'
-              : 'pointer-events-none border-transparent opacity-0'
-          }`}
-          style={{ width: CLOSE_BTN, minWidth: CLOSE_BTN, minHeight: CLOSE_BTN }}
-          tabIndex={isFiltered ? undefined : -1}
-          aria-hidden={!isFiltered}
-        >
-          ×
-        </button>
       </div>
     </div>
   )
@@ -286,6 +276,25 @@ type CardProps = {
   blocked?: number
   onSelect: () => void
   onEdit?: () => void
+  onClearFilter?: () => void
+}
+
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 20h9" />
+      <path d="M16.376 3.622a1.5 1.5 0 0 1 2.122 2.122l-11.25 11.25L4 18l.996-3.248z" />
+    </svg>
+  )
 }
 
 function ProjectStatusCard({
@@ -304,10 +313,17 @@ function ProjectStatusCard({
   blocked = 0,
   onSelect,
   onEdit,
+  onClearFilter,
 }: CardProps) {
+  const showActions = Boolean(onEdit || onClearFilter)
+
   return (
     <div
-      className={`relative flex shrink-0 flex-col rounded-[var(--radius-card)] border px-3 py-2.5 text-left motion-reduce:!transition-none ${
+      className={`relative flex shrink-0 flex-col border px-3 py-2.5 text-left motion-reduce:!transition-none ${
+        expanded
+          ? 'rounded-none border-x-0'
+          : 'rounded-[var(--radius-card)]'
+      } ${
         selected
           ? 'border-white/20 bg-surface-raised ring-1 ring-white/10'
           : 'border-border bg-surface hover:bg-surface-raised'
@@ -315,19 +331,37 @@ function ProjectStatusCard({
       style={{ width, transition: widthTransition }}
       aria-hidden={inert || undefined}
     >
-      {onEdit ? (
-        <button
-          type="button"
-          aria-label="Edit project"
-          tabIndex={inert ? -1 : undefined}
-          className="absolute right-1.5 top-1.5 min-h-8 min-w-8 rounded-md text-sm text-muted hover:bg-white/5 hover:text-text"
-          onClick={(e) => {
-            e.stopPropagation()
-            onEdit()
-          }}
-        >
-          ⋯
-        </button>
+      {showActions ? (
+        <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
+          {onEdit ? (
+            <button
+              type="button"
+              aria-label="Edit project"
+              tabIndex={inert ? -1 : undefined}
+              className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md text-muted hover:bg-white/5 hover:text-text"
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit()
+              }}
+            >
+              <PencilIcon className="h-4 w-4" />
+            </button>
+          ) : null}
+          {onClearFilter ? (
+            <button
+              type="button"
+              aria-label="Show all projects"
+              tabIndex={inert ? -1 : undefined}
+              className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md text-lg leading-none text-muted hover:bg-white/5 hover:text-text"
+              onClick={(e) => {
+                e.stopPropagation()
+                onClearFilter()
+              }}
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
       ) : null}
       <button
         type="button"
@@ -335,7 +369,11 @@ function ProjectStatusCard({
         className={`w-full text-left ${expanded ? '' : 'min-w-[140px]'}`}
         tabIndex={inert ? -1 : undefined}
       >
-        <div className="mb-1 flex items-center gap-2 pr-6">
+        <div
+          className={`mb-1 flex items-center gap-2 ${
+            showActions ? (onClearFilter ? 'pr-16' : 'pr-8') : ''
+          }`}
+        >
           <span
             className={`h-2 w-2 shrink-0 rounded-full ${dotClassName}`}
             aria-hidden
