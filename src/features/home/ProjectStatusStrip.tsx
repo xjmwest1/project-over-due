@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { ProgressBar } from '../../components/ProgressBar'
 import { PROJECT_COLOR_STYLES } from '../../lib/colors'
 import type { Project, ProjectMetrics } from '../../lib/types'
@@ -152,16 +153,36 @@ export function ProjectStatusStrip({
       const finalize = () => {
         if (cancelled || finalized) return
         finalized = true
+        const card = track.querySelector(
+          `[data-strip-card="${leaveFromId}"]`,
+        ) as HTMLElement | null
+        // Drop WAAPI and write the resting pose onto the DOM in one turn so
+        // scrollLeft + transform swap without a paint of the pre-leave React
+        // width/shift (which would look like a post-shrink sideways snap).
         shiftAnim?.cancel()
         widthAnim?.cancel()
-        prevSelectedRef.current = null
-        setHeldExpandedId(null)
-        setTransitionsOn(false)
-        setClipped(false)
-        setShift(0)
-        setSelectedWidth(CARD_WIDTH)
+        track.style.transition = 'none'
+        track.style.transform = 'translateX(0px)'
+        if (card) {
+          card.style.transition = 'none'
+          card.style.width = `${CARD_WIDTH}px`
+        }
         if (viewportRef.current) {
           viewportRef.current.scrollLeft = restoreScroll
+        }
+        flushSync(() => {
+          prevSelectedRef.current = null
+          setHeldExpandedId(null)
+          setTransitionsOn(false)
+          setClipped(false)
+          setShift(0)
+          setSelectedWidth(CARD_WIDTH)
+        })
+        track.style.transform = ''
+        track.style.transition = ''
+        if (card) {
+          card.style.width = ''
+          card.style.transition = ''
         }
         if (exitTimerRef.current) {
           clearTimeout(exitTimerRef.current)
