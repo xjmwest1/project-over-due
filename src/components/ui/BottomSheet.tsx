@@ -4,8 +4,11 @@ const EXIT_DURATION_MS = 300
 
 type Props = {
   open: boolean
-  title: string
+  title: ReactNode
   onClose: () => void
+  /** Primary header action; defaults to `onClose`. */
+  onDone?: () => void
+  doneDisabled?: boolean
   children: ReactNode
   footer?: ReactNode
   /** Slide/fade enter and exit (panel + backdrop). Defaults on. */
@@ -16,16 +19,51 @@ type Props = {
   onOpened?: () => void
 }
 
+function SheetHeader({
+  title,
+  onDone,
+  doneDisabled,
+}: {
+  title: ReactNode
+  onDone: () => void
+  doneDisabled?: boolean
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+      <div className="min-w-0 flex-1">
+        {typeof title === 'string' ? (
+          <h2 id="sheet-title" className="text-base font-semibold tracking-tight">
+            {title}
+          </h2>
+        ) : (
+          title
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onDone}
+        disabled={doneDisabled}
+        className="min-h-10 min-w-10 shrink-0 rounded-[var(--radius-card)] text-sm text-muted hover:text-text disabled:opacity-40"
+      >
+        Done
+      </button>
+    </div>
+  )
+}
+
 export function BottomSheet({
   open,
   title,
   onClose,
+  onDone,
+  doneDisabled,
   children,
   footer,
   animated = true,
   onClosed,
   onOpened,
 }: Props) {
+  const handleDone = onDone ?? onClose
   const [mounted, setMounted] = useState(open)
   const [visible, setVisible] = useState(false)
   const onClosedRef = useRef(onClosed)
@@ -147,18 +185,11 @@ export function BottomSheet({
           aria-labelledby="sheet-title"
           className="relative max-h-[min(90dvh,640px)] w-full max-w-lg self-center overflow-hidden rounded-t-[var(--radius-sheet)] border border-border bg-bg pb-[env(safe-area-inset-bottom)] shadow-2xl"
         >
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <h2 id="sheet-title" className="text-base font-semibold tracking-tight">
-              {title}
-            </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="min-h-10 min-w-10 rounded-[var(--radius-card)] text-sm text-muted hover:text-text"
-            >
-              Done
-            </button>
-          </div>
+          <SheetHeader
+            title={title}
+            onDone={handleDone}
+            doneDisabled={doneDisabled}
+          />
           <div className="max-h-[min(70dvh,520px)] overflow-y-auto px-4 py-4">
             {children}
           </div>
@@ -193,18 +224,11 @@ export function BottomSheet({
           visible ? '[translate:none]' : 'translate-y-full'
         }`}
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 id="sheet-title" className="text-base font-semibold tracking-tight">
-            {title}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-10 min-w-10 rounded-[var(--radius-card)] text-sm text-muted hover:text-text"
-          >
-            Done
-          </button>
-        </div>
+        <SheetHeader
+          title={title}
+          onDone={handleDone}
+          doneDisabled={doneDisabled}
+        />
         <div className="max-h-[min(70dvh,520px)] overflow-y-auto px-4 py-4">
           {children}
         </div>
