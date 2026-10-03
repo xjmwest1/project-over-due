@@ -93,6 +93,9 @@ export function ProjectStatusStrip({
       // Cards stay mounted; only transform/width change.
       const scrollLeft = viewport.scrollLeft
       lastTrackIndexRef.current = selectedTrackIndex
+      // Commit selection immediately so a later clear can detect "leaving".
+      // Do not rewind this in cleanup — that made unfilter a no-op after enter.
+      prevSelectedRef.current = selectedProjectId
       setHeldExpandedId(selectedProjectId)
       setClipped(true)
       setTransitionsOn(false)
@@ -116,20 +119,18 @@ export function ProjectStatusStrip({
         raf2 = requestAnimationFrame(play)
       })
 
-      prevSelectedRef.current = selectedProjectId
       return () => {
         cancelled = true
         cancelAnimationFrame(raf1)
         cancelAnimationFrame(raf2)
-        // Restore so React Strict Mode's re-run still sees "entering".
-        prevSelectedRef.current = prev
       }
     }
 
     if (leaving) {
       const leaveOffset = lastTrackIndexRef.current * (CARD_WIDTH + CARD_GAP)
+      const leaveFromId = prev
       // Keep expanding the same card while it shrinks back.
-      setHeldExpandedId(prev)
+      setHeldExpandedId(leaveFromId)
       setClipped(true)
       setTransitionsOn(true)
       setSelectedWidth(CARD_WIDTH)
@@ -137,6 +138,7 @@ export function ProjectStatusStrip({
 
       exitTimerRef.current = setTimeout(() => {
         if (cancelled) return
+        prevSelectedRef.current = null
         setHeldExpandedId(null)
         setTransitionsOn(false)
         setClipped(false)
@@ -148,30 +150,29 @@ export function ProjectStatusStrip({
         exitTimerRef.current = null
       }, ANIMATION_MS)
 
-      prevSelectedRef.current = selectedProjectId
       return () => {
         cancelled = true
         if (exitTimerRef.current) {
           clearTimeout(exitTimerRef.current)
           exitTimerRef.current = null
         }
-        prevSelectedRef.current = prev
+        // Restore so React Strict Mode's leave re-run still sees "leaving".
+        prevSelectedRef.current = leaveFromId
       }
     }
 
     if (isFiltered && selectedTrackIndex >= 0) {
-      // Still filtered after enter committed (e.g. resize observer target).
+      // Still filtered after enter committed (e.g. Strict Mode re-run or resize).
       lastTrackIndexRef.current = selectedTrackIndex
+      prevSelectedRef.current = selectedProjectId
       setHeldExpandedId(selectedProjectId)
       setClipped(true)
       setShift(-cardOffset)
       setSelectedWidth(measureExpandedWidth())
+      return
     }
 
     prevSelectedRef.current = selectedProjectId
-    return () => {
-      prevSelectedRef.current = prev
-    }
   }, [isFiltered, selectedProjectId, selectedTrackIndex])
 
   useLayoutEffect(() => {
@@ -257,7 +258,9 @@ export function ProjectStatusStrip({
                   onEditProject ? () => onEditProject(project.id) : undefined
                 }
                 onClearFilter={
-                  isExpandedCard ? () => onSelectProject(null) : undefined
+                  isExpandedCard && isFiltered
+                    ? () => onSelectProject(null)
+                    : undefined
                 }
               />
             )
