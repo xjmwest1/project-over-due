@@ -77,8 +77,13 @@ export function ProjectStatusStrip({
         ? selectedTrackIndex * (CARD_WIDTH + CARD_GAP)
         : 0
 
-    const measureExpandedWidth = () =>
-      Math.max(CARD_WIDTH, viewport.clientWidth)
+    const measureExpandedWidth = () => {
+      const styles = getComputedStyle(viewport)
+      const padX =
+        (parseFloat(styles.paddingLeft) || 0) +
+        (parseFloat(styles.paddingRight) || 0)
+      return Math.max(CARD_WIDTH, viewport.clientWidth - padX)
+    }
 
     const entering = prev == null && selectedProjectId != null
     const leaving = prev != null && selectedProjectId == null
@@ -102,7 +107,6 @@ export function ProjectStatusStrip({
         if (cancelled) return
         setTransitionsOn(true)
         setShift(-cardOffset)
-        // Measure after padding is removed (clipped → full-bleed).
         setSelectedWidth(measureExpandedWidth())
       }
 
@@ -173,9 +177,16 @@ export function ProjectStatusStrip({
   useLayoutEffect(() => {
     const viewport = viewportRef.current
     if (!viewport || !filtering) return
+    const measure = () => {
+      const styles = getComputedStyle(viewport)
+      const padX =
+        (parseFloat(styles.paddingLeft) || 0) +
+        (parseFloat(styles.paddingRight) || 0)
+      return Math.max(CARD_WIDTH, viewport.clientWidth - padX)
+    }
     const ro = new ResizeObserver(() => {
       if (selectedProjectId != null) {
-        setSelectedWidth(Math.max(CARD_WIDTH, viewport.clientWidth))
+        setSelectedWidth(measure())
       }
     })
     ro.observe(viewport)
@@ -193,9 +204,7 @@ export function ProjectStatusStrip({
     <div className="border-b border-border pb-3">
       <div
         ref={viewportRef}
-        className={`min-w-0 w-full ${
-          filtering ? '' : 'px-4'
-        } ${
+        className={`min-w-0 w-full px-4 ${
           clipped
             ? 'overflow-hidden'
             : 'overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
@@ -319,12 +328,10 @@ function ProjectStatusCard({
 
   return (
     <div
-      className={`relative flex shrink-0 flex-col border px-3 py-2.5 text-left motion-reduce:!transition-none ${
-        expanded
-          ? 'rounded-none border-x-0 border-y-border bg-surface-raised'
-          : selected
-            ? 'rounded-[var(--radius-card)] border-white/20 bg-surface-raised ring-1 ring-white/10'
-            : 'rounded-[var(--radius-card)] border-border bg-surface hover:bg-surface-raised'
+      className={`relative flex shrink-0 flex-col rounded-[var(--radius-card)] border px-3 py-2.5 text-left motion-reduce:!transition-none ${
+        selected || expanded
+          ? 'border-white/20 bg-surface-raised ring-1 ring-white/10'
+          : 'border-border bg-surface hover:bg-surface-raised'
       } ${inert ? 'pointer-events-none' : ''}`}
       style={{ width, transition: widthTransition }}
       aria-hidden={inert || undefined}
