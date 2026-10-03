@@ -321,12 +321,10 @@ function ProjectStatusCard({
     <div
       className={`relative flex shrink-0 flex-col border px-3 py-2.5 text-left motion-reduce:!transition-none ${
         expanded
-          ? 'rounded-none border-x-0'
-          : 'rounded-[var(--radius-card)]'
-      } ${
-        selected
-          ? 'border-white/20 bg-surface-raised ring-1 ring-white/10'
-          : 'border-border bg-surface hover:bg-surface-raised'
+          ? 'rounded-none border-x-0 border-y-border bg-surface-raised'
+          : selected
+            ? 'rounded-[var(--radius-card)] border-white/20 bg-surface-raised ring-1 ring-white/10'
+            : 'rounded-[var(--radius-card)] border-border bg-surface hover:bg-surface-raised'
       } ${inert ? 'pointer-events-none' : ''}`}
       style={{ width, transition: widthTransition }}
       aria-hidden={inert || undefined}
