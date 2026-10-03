@@ -107,7 +107,7 @@ export function ProjectFormSheet({
           <input
             value={values.name}
             onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
-            className="min-h-11 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-sm outline-none focus:border-white/20"
+            className="min-h-11 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-base outline-none focus:border-white/20"
             placeholder="Kitchen reno"
           />
         </label>
@@ -141,7 +141,7 @@ export function ProjectFormSheet({
             value={values.note}
             onChange={(e) => setValues((v) => ({ ...v, note: e.target.value }))}
             rows={3}
-            className="rounded-[var(--radius-card)] border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-white/20"
+            className="rounded-[var(--radius-card)] border border-border bg-surface px-3 py-2 text-base outline-none focus:border-white/20"
             placeholder="Optional summary"
           />
         </label>
@@ -170,13 +170,13 @@ export function ProjectFormSheet({
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="https://…"
-              className="min-h-10 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-sm"
+              className="min-h-10 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-base"
             />
             <input
               value={linkLabel}
               onChange={(e) => setLinkLabel(e.target.value)}
               placeholder="Label (optional)"
-              className="min-h-10 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-sm"
+              className="min-h-10 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-base"
             />
             <Button type="button" variant="secondary" className="w-full" onClick={addLink}>
               Add link

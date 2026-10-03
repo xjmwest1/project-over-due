@@ -79,7 +79,7 @@ export function ImportFlow() {
           }}
           rows={10}
           placeholder='{"version":1,"project":{...},"tasks":[...]}'
-          className="w-full rounded-[var(--radius-card)] border border-border bg-surface px-3 py-2 font-mono text-xs leading-relaxed outline-none focus:border-white/20"
+          className="w-full rounded-[var(--radius-card)] border border-border bg-surface px-3 py-2 font-mono text-base leading-relaxed outline-none focus:border-white/20"
         />
         {parseError ? (
           <p className="mt-2 text-sm text-accent-rose">{parseError}</p>
