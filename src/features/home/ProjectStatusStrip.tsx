@@ -22,6 +22,13 @@ type Props = {
   onEditProject?: (projectId: string) => void
 }
 
+/**
+ * Horizontal project metrics strip.
+ *
+ * Cards are always mounted (stable keys). Filtering does not remove them —
+ * the track translates and the selected card grows so neighbors slide off
+ * the clipped viewport.
+ */
 export function ProjectStatusStrip({
   projects,
   metricsByProjectId,
@@ -39,116 +46,146 @@ export function ProjectStatusStrip({
     isFiltered && selectedIndex >= 0 ? selectedIndex + 1 : -1
 
   const viewportRef = useRef<HTMLDivElement>(null)
-  const wasFilteredRef = useRef(false)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const prevSelectedRef = useRef<string | null>(null)
   const lastTrackIndexRef = useRef(0)
-  const expandedIdRef = useRef<string | null>(null)
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Shift / width are driven explicitly so we can FLIP from the card's
-  // on-screen position instead of jumping it to the viewport edge.
+  // Preserve the expanded card id briefly while the exit animation runs.
+  const [heldExpandedId, setHeldExpandedId] = useState<string | null>(null)
   const [shift, setShift] = useState(0)
   const [selectedWidth, setSelectedWidth] = useState(CARD_WIDTH)
-  const [animate, setAnimate] = useState(false)
+  const [transitionsOn, setTransitionsOn] = useState(false)
   const [clipped, setClipped] = useState(false)
-  // Keep rendering the expanding card during exit after selection clears.
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const expandedId = selectedProjectId ?? heldExpandedId
+  const filtering = clipped || isFiltered
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current
-    if (!viewport) return
+    const track = trackRef.current
+    if (!viewport || !track) return
 
     if (exitTimerRef.current) {
       clearTimeout(exitTimerRef.current)
       exitTimerRef.current = null
     }
 
+    const prev = prevSelectedRef.current
+    let cancelled = false
+
+    const cardOffset =
+      selectedTrackIndex >= 0
+        ? selectedTrackIndex * (CARD_WIDTH + CARD_GAP)
+        : 0
     const targetWidth = Math.max(CARD_WIDTH, viewport.clientWidth)
 
-    if (isFiltered && selectedTrackIndex >= 0 && selectedProjectId) {
-      const cardOffset = selectedTrackIndex * (CARD_WIDTH + CARD_GAP)
+    const entering = prev == null && selectedProjectId != null
+    const leaving = prev != null && selectedProjectId == null
+
+    if (entering && selectedTrackIndex >= 0) {
+      // FLIP: lock the scrolled view, then animate grow + slide from there.
+      // Cards stay mounted; only transform/width change.
+      const scrollLeft = viewport.scrollLeft
       lastTrackIndexRef.current = selectedTrackIndex
-      expandedIdRef.current = selectedProjectId
-      setExpandedId(selectedProjectId)
+      setHeldExpandedId(selectedProjectId)
+      setClipped(true)
+      setTransitionsOn(false)
+      viewport.scrollLeft = 0
+      setShift(-scrollLeft)
+      setSelectedWidth(CARD_WIDTH)
 
-      if (!wasFilteredRef.current) {
-        // Entering filter: lock the current scroll-derived view (no transition),
-        // then animate width + shift so the card grows from its original spot.
-        const scrollLeft = viewport.scrollLeft
-        wasFilteredRef.current = true
-        setAnimate(false)
-        setClipped(true)
-        viewport.scrollLeft = 0
-        setShift(-scrollLeft)
-        setSelectedWidth(CARD_WIDTH)
+      // Force style flush so the next update can transition from this pose.
+      void track.offsetWidth
 
-        let raf2 = 0
-        const raf1 = requestAnimationFrame(() => {
-          raf2 = requestAnimationFrame(() => {
-            setAnimate(true)
-            setShift(-cardOffset)
-            setSelectedWidth(targetWidth)
-          })
-        })
-        return () => {
-          cancelAnimationFrame(raf1)
-          cancelAnimationFrame(raf2)
-        }
+      const play = () => {
+        if (cancelled) return
+        setTransitionsOn(true)
+        setShift(-cardOffset)
+        setSelectedWidth(targetWidth)
       }
 
-      // Already filtered (e.g. resize): keep selected card pinned and sized.
-      setClipped(true)
-      setAnimate(true)
-      setShift(-cardOffset)
-      setSelectedWidth(targetWidth)
-      return
+      // Double rAF: first frame commits the locked pose; second starts tween.
+      let raf2 = 0
+      const raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(play)
+      })
+
+      prevSelectedRef.current = selectedProjectId
+      return () => {
+        cancelled = true
+        cancelAnimationFrame(raf1)
+        cancelAnimationFrame(raf2)
+        // Restore so React Strict Mode's re-run still sees "entering".
+        prevSelectedRef.current = prev
+      }
     }
 
-    if (!isFiltered && wasFilteredRef.current) {
-      // Leaving filter: shrink in place, then restore normal scrolling.
-      const cardOffset = lastTrackIndexRef.current * (CARD_WIDTH + CARD_GAP)
-      setExpandedId(expandedIdRef.current)
-      setAnimate(true)
+    if (leaving) {
+      const leaveOffset = lastTrackIndexRef.current * (CARD_WIDTH + CARD_GAP)
+      // Keep expanding the same card while it shrinks back.
+      setHeldExpandedId(prev)
       setClipped(true)
+      setTransitionsOn(true)
       setSelectedWidth(CARD_WIDTH)
-      setShift(-cardOffset)
+      setShift(-leaveOffset)
 
       exitTimerRef.current = setTimeout(() => {
-        wasFilteredRef.current = false
-        expandedIdRef.current = null
-        setExpandedId(null)
-        setAnimate(false)
+        if (cancelled) return
+        setHeldExpandedId(null)
+        setTransitionsOn(false)
         setClipped(false)
         setShift(0)
-        if (viewportRef.current) {
-          viewportRef.current.scrollLeft = cardOffset
+        setSelectedWidth(CARD_WIDTH)
+        if (viewportRef.current && leaveOffset > 0) {
+          viewportRef.current.scrollLeft = leaveOffset
         }
         exitTimerRef.current = null
       }, ANIMATION_MS)
 
+      prevSelectedRef.current = selectedProjectId
       return () => {
+        cancelled = true
         if (exitTimerRef.current) {
           clearTimeout(exitTimerRef.current)
           exitTimerRef.current = null
         }
+        prevSelectedRef.current = prev
       }
     }
-  }, [isFiltered, selectedTrackIndex, selectedProjectId])
 
-  // Keep expanded width in sync with viewport while filtered.
+    if (isFiltered && selectedTrackIndex >= 0) {
+      // Still filtered after enter committed (e.g. resize observer target).
+      lastTrackIndexRef.current = selectedTrackIndex
+      setHeldExpandedId(selectedProjectId)
+      setClipped(true)
+      setShift(-cardOffset)
+      setSelectedWidth(targetWidth)
+    }
+
+    prevSelectedRef.current = selectedProjectId
+    return () => {
+      prevSelectedRef.current = prev
+    }
+  }, [isFiltered, selectedProjectId, selectedTrackIndex])
+
   useLayoutEffect(() => {
     const viewport = viewportRef.current
-    if (!viewport || !wasFilteredRef.current || !isFiltered) return
+    if (!viewport || !filtering) return
     const ro = new ResizeObserver(() => {
-      setSelectedWidth(Math.max(CARD_WIDTH, viewport.clientWidth))
+      if (selectedProjectId != null) {
+        setSelectedWidth(Math.max(CARD_WIDTH, viewport.clientWidth))
+      }
     })
     ro.observe(viewport)
     return () => ro.disconnect()
-  }, [isFiltered])
+  }, [filtering, selectedProjectId])
 
-  const widthTransition = animate
+  const trackTransition = transitionsOn
+    ? `transform ${ANIMATION_MS}ms ease-out`
+    : 'none'
+  const widthTransition = transitionsOn
     ? `width ${ANIMATION_MS}ms ease-out`
     : 'none'
-  const filtering = clipped || isFiltered
 
   return (
     <div className="border-b border-border pb-3">
@@ -162,19 +199,18 @@ export function ProjectStatusStrip({
           }`}
         >
           <div
+            ref={trackRef}
             className="flex items-stretch gap-2 motion-reduce:!transition-none"
             style={{
               transform: `translateX(${shift}px)`,
-              transition: animate
-                ? `transform ${ANIMATION_MS}ms ease-out`
-                : 'none',
+              transition: trackTransition,
             }}
           >
             <ProjectStatusCard
               name="All projects"
               selected={selectedProjectId === null && !filtering}
               width={CARD_WIDTH}
-              offscreen={filtering}
+              inert={filtering}
               done={globalMetrics.done}
               remaining={globalMetrics.remaining}
               total={globalMetrics.total}
@@ -185,17 +221,17 @@ export function ProjectStatusStrip({
               const m = metricsByProjectId.get(project.id)
               const styles = PROJECT_COLOR_STYLES[project.color]
               const isExpandedCard = expandedId === project.id
-              const selected =
-                selectedProjectId === project.id ||
-                (filtering && isExpandedCard)
               return (
                 <ProjectStatusCard
                   key={project.id}
                   name={project.name}
-                  selected={selected}
+                  selected={
+                    selectedProjectId === project.id ||
+                    (filtering && isExpandedCard)
+                  }
                   width={isExpandedCard ? selectedWidth : CARD_WIDTH}
                   expanded={isExpandedCard && selectedWidth > CARD_WIDTH}
-                  offscreen={filtering && !isExpandedCard}
+                  inert={filtering && !isExpandedCard}
                   widthTransition={isExpandedCard ? widthTransition : 'none'}
                   done={m?.done ?? 0}
                   remaining={m?.remaining ?? 0}
@@ -213,7 +249,6 @@ export function ProjectStatusStrip({
             })}
           </div>
         </div>
-        {/* Always reserve space so revealing × doesn't shift the strip. */}
         <button
           type="button"
           aria-label="Show all projects"
@@ -239,7 +274,8 @@ type CardProps = {
   selected: boolean
   width: number
   expanded?: boolean
-  offscreen?: boolean
+  /** Visually off-viewport / non-interactive, but still mounted. */
+  inert?: boolean
   widthTransition?: string
   done: number
   remaining: number
@@ -257,7 +293,7 @@ function ProjectStatusCard({
   selected,
   width,
   expanded = false,
-  offscreen = false,
+  inert = false,
   widthTransition = 'none',
   done,
   remaining,
@@ -275,15 +311,15 @@ function ProjectStatusCard({
         selected
           ? 'border-white/20 bg-surface-raised ring-1 ring-white/10'
           : 'border-border bg-surface hover:bg-surface-raised'
-      } ${offscreen ? 'pointer-events-none' : ''}`}
+      } ${inert ? 'pointer-events-none' : ''}`}
       style={{ width, transition: widthTransition }}
-      aria-hidden={offscreen || undefined}
+      aria-hidden={inert || undefined}
     >
       {onEdit ? (
         <button
           type="button"
           aria-label="Edit project"
-          tabIndex={offscreen ? -1 : undefined}
+          tabIndex={inert ? -1 : undefined}
           className="absolute right-1.5 top-1.5 min-h-8 min-w-8 rounded-md text-sm text-muted hover:bg-white/5 hover:text-text"
           onClick={(e) => {
             e.stopPropagation()
@@ -297,7 +333,7 @@ function ProjectStatusCard({
         type="button"
         onClick={onSelect}
         className={`w-full text-left ${expanded ? '' : 'min-w-[140px]'}`}
-        tabIndex={offscreen ? -1 : undefined}
+        tabIndex={inert ? -1 : undefined}
       >
         <div className="mb-1 flex items-center gap-2 pr-6">
           <span
