@@ -12,6 +12,8 @@ type Props = {
   animated?: boolean
   /** Fired after exit animation finishes when `animated` is true. */
   onClosed?: () => void
+  /** Fired after enter animation finishes when `animated` is true (or immediately when not). */
+  onOpened?: () => void
 }
 
 export function BottomSheet({
@@ -22,15 +24,19 @@ export function BottomSheet({
   footer,
   animated = true,
   onClosed,
+  onOpened,
 }: Props) {
   const [mounted, setMounted] = useState(open)
   const [visible, setVisible] = useState(false)
   const onClosedRef = useRef(onClosed)
+  const onOpenedRef = useRef(onOpened)
   const visibleRef = useRef(false)
   const finishedCloseRef = useRef(false)
+  const openedFiredRef = useRef(false)
 
   useEffect(() => {
     onClosedRef.current = onClosed
+    onOpenedRef.current = onOpened
   })
 
   useEffect(() => {
@@ -44,29 +50,51 @@ export function BottomSheet({
 
   useEffect(() => {
     if (!animated) {
-      if (!open) onClosedRef.current?.()
+      if (open) {
+        openedFiredRef.current = true
+        onOpenedRef.current?.()
+      } else {
+        openedFiredRef.current = false
+        onClosedRef.current?.()
+      }
       return
     }
 
     if (open) {
       finishedCloseRef.current = false
+      openedFiredRef.current = false
       setMounted(true)
       let innerFrame = 0
+      let openedFallback = 0
       const outerFrame = requestAnimationFrame(() => {
         innerFrame = requestAnimationFrame(() => {
           visibleRef.current = true
           setVisible(true)
+          const reduceMotion =
+            typeof window !== 'undefined' &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          // Fallback if transitionend does not fire (reduced motion / no transform change).
+          openedFallback = window.setTimeout(
+            () => {
+              if (openedFiredRef.current) return
+              openedFiredRef.current = true
+              onOpenedRef.current?.()
+            },
+            reduceMotion ? 0 : EXIT_DURATION_MS,
+          )
         })
       })
       return () => {
         cancelAnimationFrame(outerFrame)
         cancelAnimationFrame(innerFrame)
+        window.clearTimeout(openedFallback)
       }
     }
 
     const shouldAnimateExit = visibleRef.current
     visibleRef.current = false
     setVisible(false)
+    openedFiredRef.current = false
 
     const reduceMotion =
       typeof window !== 'undefined' &&
@@ -86,7 +114,16 @@ export function BottomSheet({
   }, [open, animated])
 
   const handlePanelTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
-    if (!animated || open || e.propertyName !== 'transform') return
+    // Tailwind v4 animates the individual `translate` property (not `transform`).
+    if (!animated || (e.propertyName !== 'translate' && e.propertyName !== 'transform')) {
+      return
+    }
+    if (open) {
+      if (openedFiredRef.current) return
+      openedFiredRef.current = true
+      onOpenedRef.current?.()
+      return
+    }
     if (finishedCloseRef.current) return
     finishedCloseRef.current = true
     setMounted(false)
@@ -151,7 +188,9 @@ export function BottomSheet({
         aria-labelledby="sheet-title"
         onTransitionEnd={handlePanelTransitionEnd}
         className={`relative max-h-[min(90dvh,640px)] w-full max-w-lg self-center overflow-hidden rounded-t-[var(--radius-sheet)] border border-border bg-bg pb-[env(safe-area-inset-bottom)] shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none ${
-          visible ? 'translate-y-0' : 'translate-y-full'
+          /* translate:none when open — translate-y-0 still creates a containing
+             block that can trigger iOS Safari focus zoom. */
+          visible ? '[translate:none]' : 'translate-y-full'
         }`}
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
