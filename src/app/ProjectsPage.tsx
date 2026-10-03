@@ -167,7 +167,7 @@ export function ProjectsPage() {
   const openTask = (task: Task) => setActiveTaskId(task.id)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
       <header className="shrink-0 bg-bg px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h1 className="text-xl font-semibold tracking-tight">Projects</h1>
@@ -202,7 +202,7 @@ export function ProjectsPage() {
         ) : null}
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
         {boardLoading ? (
           <p className="px-4 py-8 text-sm text-muted">Loading board…</p>
         ) : projects.length === 0 ? (

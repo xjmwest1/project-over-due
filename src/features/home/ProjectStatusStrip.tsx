@@ -136,7 +136,7 @@ function ProjectStatusCard({
   // Outer slot: releases layout width so the selected card can expand.
   // Inner card: keeps a stable width and translates off-screen (clipped by the slot).
   const slotClass = exiting
-    ? 'w-0 min-w-0 shrink-0 basis-0'
+    ? 'w-0 min-w-0 shrink-0 basis-0 overflow-hidden'
     : expanded
       ? 'min-w-0 flex-1 basis-0'
       : collapsed
