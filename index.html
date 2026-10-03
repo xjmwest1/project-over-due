@@ -7,6 +7,22 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
+    <script>
+      // iOS Safari auto-zooms focused fields; maximum-scale blocks that zoom.
+      // Apply only on iOS so Android keeps pinch-zoom. iOS still allows manual pinch.
+      ;(function () {
+        var ua = navigator.userAgent || ''
+        var iOS =
+          /iP(ad|hone|od)/.test(ua) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+        if (!iOS) return
+        var meta = document.querySelector('meta[name="viewport"]')
+        if (!meta) return
+        var content = meta.getAttribute('content') || ''
+        if (content.indexOf('maximum-scale') !== -1) return
+        meta.setAttribute('content', content + ', maximum-scale=1')
+      })()
+    </script>
     <meta name="theme-color" content="#0d0d0f" />
     <title>Home Projects</title>
   </head>
