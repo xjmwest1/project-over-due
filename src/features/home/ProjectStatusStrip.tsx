@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { ProgressBar } from '../../components/ProgressBar'
 import { PROJECT_COLOR_STYLES } from '../../lib/colors'
 import type { Project, ProjectMetrics } from '../../lib/types'
@@ -6,6 +7,8 @@ import type { Project, ProjectMetrics } from '../../lib/types'
 const CARD_WIDTH = 168
 const CARD_GAP = 8 // gap-2
 const ANIMATION_MS = 300
+/** Shared easing so width + track slide stay locked together. */
+const ANIMATION_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)'
 
 type Props = {
   projects: Project[]
@@ -48,6 +51,8 @@ export function ProjectStatusStrip({
   const trackRef = useRef<HTMLDivElement>(null)
   const prevSelectedRef = useRef<string | null>(null)
   const lastTrackIndexRef = useRef(0)
+  // Scroll offset captured when entering filter; leave animates back to it.
+  const enterScrollRef = useRef(0)
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Preserve the expanded card id briefly while the exit animation runs.
   const [heldExpandedId, setHeldExpandedId] = useState<string | null>(null)
@@ -93,6 +98,10 @@ export function ProjectStatusStrip({
       // Cards stay mounted; only transform/width change.
       const scrollLeft = viewport.scrollLeft
       lastTrackIndexRef.current = selectedTrackIndex
+      enterScrollRef.current = scrollLeft
+      // Commit selection immediately so a later clear can detect "leaving".
+      // Do not rewind this in cleanup — that made unfilter a no-op after enter.
+      prevSelectedRef.current = selectedProjectId
       setHeldExpandedId(selectedProjectId)
       setClipped(true)
       setTransitionsOn(false)
@@ -116,62 +125,133 @@ export function ProjectStatusStrip({
         raf2 = requestAnimationFrame(play)
       })
 
-      prevSelectedRef.current = selectedProjectId
       return () => {
         cancelled = true
         cancelAnimationFrame(raf1)
         cancelAnimationFrame(raf2)
-        // Restore so React Strict Mode's re-run still sees "entering".
-        prevSelectedRef.current = prev
       }
     }
 
     if (leaving) {
       const leaveOffset = lastTrackIndexRef.current * (CARD_WIDTH + CARD_GAP)
-      // Keep expanding the same card while it shrinks back.
-      setHeldExpandedId(prev)
+      const restoreScroll = enterScrollRef.current
+      const leaveFromId = prev
+      const expandedWidth = measureExpandedWidth()
+      // Hold the expanded React pose; WAAPI drives shrink + slide in lockstep
+      // so neighbors slide in with the width change (no post-shrink snap).
+      setHeldExpandedId(leaveFromId)
       setClipped(true)
-      setTransitionsOn(true)
-      setSelectedWidth(CARD_WIDTH)
+      setTransitionsOn(false)
       setShift(-leaveOffset)
+      setSelectedWidth(expandedWidth)
 
-      exitTimerRef.current = setTimeout(() => {
-        if (cancelled) return
-        setHeldExpandedId(null)
-        setTransitionsOn(false)
-        setClipped(false)
-        setShift(0)
-        setSelectedWidth(CARD_WIDTH)
-        if (viewportRef.current && leaveOffset > 0) {
-          viewportRef.current.scrollLeft = leaveOffset
+      let raf2 = 0
+      let shiftAnim: Animation | null = null
+      let widthAnim: Animation | null = null
+      let finalized = false
+
+      const finalize = () => {
+        if (cancelled || finalized) return
+        finalized = true
+        const card = track.querySelector(
+          `[data-strip-card="${leaveFromId}"]`,
+        ) as HTMLElement | null
+        // Drop WAAPI and write the resting pose onto the DOM in one turn so
+        // scrollLeft + transform swap without a paint of the pre-leave React
+        // width/shift (which would look like a post-shrink sideways snap).
+        shiftAnim?.cancel()
+        widthAnim?.cancel()
+        track.style.transition = 'none'
+        track.style.transform = 'translateX(0px)'
+        if (card) {
+          card.style.transition = 'none'
+          card.style.width = `${CARD_WIDTH}px`
         }
-        exitTimerRef.current = null
-      }, ANIMATION_MS)
-
-      prevSelectedRef.current = selectedProjectId
-      return () => {
-        cancelled = true
+        if (viewportRef.current) {
+          viewportRef.current.scrollLeft = restoreScroll
+        }
+        flushSync(() => {
+          prevSelectedRef.current = null
+          setHeldExpandedId(null)
+          setTransitionsOn(false)
+          setClipped(false)
+          setShift(0)
+          setSelectedWidth(CARD_WIDTH)
+        })
+        track.style.transform = ''
+        track.style.transition = ''
+        if (card) {
+          card.style.width = ''
+          card.style.transition = ''
+        }
         if (exitTimerRef.current) {
           clearTimeout(exitTimerRef.current)
           exitTimerRef.current = null
         }
-        prevSelectedRef.current = prev
+      }
+
+      const raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          if (cancelled) return
+          const card = track.querySelector(
+            `[data-strip-card="${leaveFromId}"]`,
+          ) as HTMLElement | null
+          const timing: KeyframeAnimationOptions = {
+            duration: ANIMATION_MS,
+            easing: ANIMATION_EASING,
+            fill: 'forwards',
+          }
+          shiftAnim = track.animate(
+            [
+              { transform: `translateX(${-leaveOffset}px)` },
+              { transform: `translateX(${-restoreScroll}px)` },
+            ],
+            timing,
+          )
+          if (card) {
+            widthAnim = card.animate(
+              [
+                { width: `${expandedWidth}px` },
+                { width: `${CARD_WIDTH}px` },
+              ],
+              timing,
+            )
+          }
+          void Promise.all([
+            shiftAnim.finished.catch(() => {}),
+            widthAnim?.finished.catch(() => {}) ?? Promise.resolve(),
+          ]).then(finalize)
+          exitTimerRef.current = setTimeout(finalize, ANIMATION_MS + 100)
+        })
+      })
+
+      return () => {
+        cancelled = true
+        cancelAnimationFrame(raf1)
+        cancelAnimationFrame(raf2)
+        shiftAnim?.cancel()
+        widthAnim?.cancel()
+        if (exitTimerRef.current) {
+          clearTimeout(exitTimerRef.current)
+          exitTimerRef.current = null
+        }
+        // Restore so React Strict Mode's leave re-run still sees "leaving".
+        prevSelectedRef.current = leaveFromId
       }
     }
 
     if (isFiltered && selectedTrackIndex >= 0) {
-      // Still filtered after enter committed (e.g. resize observer target).
+      // Still filtered after enter committed (e.g. Strict Mode re-run or resize).
       lastTrackIndexRef.current = selectedTrackIndex
+      prevSelectedRef.current = selectedProjectId
       setHeldExpandedId(selectedProjectId)
       setClipped(true)
       setShift(-cardOffset)
       setSelectedWidth(measureExpandedWidth())
+      return
     }
 
     prevSelectedRef.current = selectedProjectId
-    return () => {
-      prevSelectedRef.current = prev
-    }
   }, [isFiltered, selectedProjectId, selectedTrackIndex])
 
   useLayoutEffect(() => {
@@ -194,20 +274,20 @@ export function ProjectStatusStrip({
   }, [filtering, selectedProjectId])
 
   const trackTransition = transitionsOn
-    ? `transform ${ANIMATION_MS}ms ease-out`
+    ? `transform ${ANIMATION_MS}ms ${ANIMATION_EASING}`
     : 'none'
   const widthTransition = transitionsOn
-    ? `width ${ANIMATION_MS}ms ease-out`
+    ? `width ${ANIMATION_MS}ms ${ANIMATION_EASING}`
     : 'none'
 
   return (
     <div className="border-b border-border pb-3">
       <div
         ref={viewportRef}
-        className={`min-w-0 w-full px-4 ${
+        className={`min-w-0 w-full px-4 pb-1 ${
           clipped
             ? 'overflow-hidden'
-            : 'overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+            : 'overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
         }`}
       >
         <div
@@ -236,6 +316,7 @@ export function ProjectStatusStrip({
             return (
               <ProjectStatusCard
                 key={project.id}
+                cardId={project.id}
                 name={project.name}
                 selected={
                   selectedProjectId === project.id ||
@@ -257,7 +338,9 @@ export function ProjectStatusStrip({
                   onEditProject ? () => onEditProject(project.id) : undefined
                 }
                 onClearFilter={
-                  isExpandedCard ? () => onSelectProject(null) : undefined
+                  isExpandedCard && isFiltered
+                    ? () => onSelectProject(null)
+                    : undefined
                 }
               />
             )
@@ -269,6 +352,7 @@ export function ProjectStatusStrip({
 }
 
 type CardProps = {
+  cardId?: string
   name: string
   selected: boolean
   width: number
@@ -307,6 +391,7 @@ function PencilIcon({ className }: { className?: string }) {
 }
 
 function ProjectStatusCard({
+  cardId,
   name,
   selected,
   width,
@@ -328,6 +413,7 @@ function ProjectStatusCard({
 
   return (
     <div
+      data-strip-card={cardId}
       className={`relative flex shrink-0 flex-col rounded-[var(--radius-card)] border px-3 py-2.5 text-left motion-reduce:!transition-none ${
         selected || expanded
           ? 'border-white/20 bg-surface-raised ring-1 ring-white/10'
