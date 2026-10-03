@@ -54,7 +54,7 @@ export function QuickAddTaskSheet({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             autoFocus
-            className="min-h-11 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-sm outline-none focus:border-white/20"
+            className="min-h-11 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-base outline-none focus:border-white/20"
             placeholder="What needs doing?"
             onKeyDown={(e) => {
               if (e.key === 'Enter') void submit()
