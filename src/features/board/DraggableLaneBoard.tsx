@@ -73,7 +73,7 @@ function LaneDropZone({
     <SortableContext items={taskIds} strategy={horizontalListSortingStrategy}>
       <div
         ref={setNodeRef}
-        className={`flex min-h-[52px] gap-2.5 overflow-x-auto px-4 pb-1 snap-x snap-mandatory touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+        className={`flex min-h-[52px] min-w-0 gap-2.5 overflow-x-auto px-4 pb-1 snap-x snap-mandatory touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
           isOver ? 'rounded-[10px] ring-1 ring-accent-mint/30' : ''
         }`}
       >
@@ -239,7 +239,7 @@ export function DraggableLaneBoard({
       onDragCancel={handleDragCancel}
     >
       <div
-        className={`flex flex-1 flex-col gap-5 overflow-y-auto px-0 pb-24 pt-3 touch-pan-y ${
+        className={`flex min-w-0 flex-1 flex-col gap-5 overflow-x-hidden overflow-y-auto px-0 pb-24 pt-3 touch-pan-y ${
           persisting ? 'pointer-events-none opacity-90' : ''
         }`}
       >

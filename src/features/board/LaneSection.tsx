@@ -10,7 +10,7 @@ type Props = {
 
 export function LaneSection({ status, count, children }: Props) {
   return (
-    <section>
+    <section className="min-w-0">
       <div className="mb-2 flex items-center justify-between px-4">
         <span
           className={`text-[11px] font-semibold uppercase tracking-wider ${LANE_NAME_CLASS[status]}`}
