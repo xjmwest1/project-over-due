@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { Button } from '../../components/ui/Button'
 import { PROJECT_COLOR_STYLES } from '../../lib/colors'
@@ -30,6 +30,24 @@ function valuesFromTask(task: Task): TaskFormValues {
   }
 }
 
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 20h9" />
+      <path d="M16.376 3.622a1.5 1.5 0 0 1 2.122 2.122l-11.25 11.25L4 18l.996-3.248z" />
+    </svg>
+  )
+}
+
 export function TaskDetailSheet({
   open,
   task,
@@ -48,6 +66,8 @@ export function TaskDetailSheet({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const [linkLabel, setLinkLabel] = useState('')
+  const [editingTitle, setEditingTitle] = useState(false)
+  const titleInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open || !task) return
@@ -58,7 +78,14 @@ export function TaskDetailSheet({
     setConfirmDelete(false)
     setLinkUrl('')
     setLinkLabel('')
+    setEditingTitle(false)
   }, [open, task, project])
+
+  useEffect(() => {
+    if (!editingTitle) return
+    titleInputRef.current?.focus()
+    titleInputRef.current?.select()
+  }, [editingTitle])
 
   const clearDisplay = useCallback(() => {
     setDisplayTask(null)
@@ -79,6 +106,11 @@ export function TaskDetailSheet({
   const formValues = values ?? sheetValues
 
   const save = async () => {
+    if (!formValues.title.trim()) {
+      setError('Title is required')
+      setEditingTitle(true)
+      return
+    }
     setError(null)
     setSaving(true)
     try {
@@ -116,39 +148,77 @@ export function TaskDetailSheet({
     })
   }
 
+  const updateTitle = (title: string) => {
+    setValues((v) => {
+      const base = v ?? sheetValues
+      return { ...base, title }
+    })
+  }
+
   const accent = sheetProject
     ? PROJECT_COLOR_STYLES[sheetProject.color].dot
     : ''
 
+  const headerTitle = (
+    <div className="min-w-0">
+      {sheetProject ? (
+        <p className="mb-0.5 flex items-center gap-1.5 text-xs text-muted">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${accent}`} aria-hidden />
+          <span className="truncate">{sheetProject.name}</span>
+        </p>
+      ) : null}
+      {editingTitle ? (
+        <input
+          ref={titleInputRef}
+          id="sheet-title"
+          value={formValues.title}
+          onChange={(e) => updateTitle(e.target.value)}
+          onBlur={() => setEditingTitle(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              setEditingTitle(false)
+            }
+            if (e.key === 'Escape') {
+              e.preventDefault()
+              e.stopPropagation()
+              setEditingTitle(false)
+            }
+          }}
+          aria-label="Task title"
+          className="w-full min-h-9 rounded-[var(--radius-card)] border border-border bg-surface px-2 text-base font-semibold tracking-tight outline-none focus:border-white/20"
+        />
+      ) : (
+        <div className="flex min-w-0 items-center gap-1">
+          <h2
+            id="sheet-title"
+            className="min-w-0 truncate text-base font-semibold tracking-tight"
+          >
+            {formValues.title.trim() || 'Untitled'}
+          </h2>
+          <button
+            type="button"
+            aria-label="Edit title"
+            className="inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-md text-muted hover:bg-white/5 hover:text-text"
+            onClick={() => setEditingTitle(true)}
+          >
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <BottomSheet
       open={open}
-      title="Task"
+      title={headerTitle}
       onClose={onClose}
+      onDone={() => void save()}
+      doneDisabled={saving}
       onClosed={clearDisplay}
     >
       <div className="flex flex-col gap-4">
-        {sheetProject ? (
-          <p className="flex items-center gap-2 text-xs text-muted">
-            <span className={`h-2 w-2 rounded-full ${accent}`} aria-hidden />
-            {sheetProject.name}
-          </p>
-        ) : null}
-
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-muted">Title</span>
-          <input
-            value={formValues.title}
-            onChange={(e) =>
-              setValues((v) => {
-                const base = v ?? sheetValues
-                return { ...base, title: e.target.value }
-              })
-            }
-            className="min-h-11 rounded-[var(--radius-card)] border border-border bg-surface px-3 text-base outline-none focus:border-white/20"
-          />
-        </label>
-
         <div>
           <span className="mb-2 block text-xs font-medium text-muted">Status</span>
           <div className="flex flex-wrap gap-1.5">
@@ -233,15 +303,6 @@ export function TaskDetailSheet({
         </div>
 
         {error ? <p className="text-sm text-accent-rose">{error}</p> : null}
-
-        <Button
-          type="button"
-          className="w-full bg-[#fafafa] text-bg hover:bg-white"
-          disabled={saving || !formValues.title.trim()}
-          onClick={() => void save()}
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
 
         {confirmDelete ? (
           <div className="flex flex-col gap-2 rounded-[var(--radius-card)] border border-accent-rose/30 bg-accent-rose/5 p-3">
