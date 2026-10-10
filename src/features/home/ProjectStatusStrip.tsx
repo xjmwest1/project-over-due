@@ -417,7 +417,9 @@ function ProjectStatusCard({
   return (
     <div
       data-strip-card={cardId}
-      className={`relative flex shrink-0 flex-col rounded-[var(--radius-card)] border px-3 py-2.5 text-left motion-reduce:!transition-none ${
+      className={`relative flex shrink-0 flex-col rounded-[var(--radius-card)] border px-3 text-left motion-reduce:!transition-none ${
+        showDetails ? 'py-2.5' : 'py-1.5'
+      } ${
         selected || expanded
           ? 'border-white/20 bg-surface-raised ring-1 ring-white/10'
           : 'border-border bg-surface hover:bg-surface-raised'
@@ -464,7 +466,7 @@ function ProjectStatusCard({
         tabIndex={inert ? -1 : undefined}
       >
         <div
-          className={`mb-1 flex items-center gap-2 ${
+          className={`flex items-center gap-2 ${showDetails ? 'mb-1' : ''} ${
             showActions ? (onClearFilter ? 'pr-16' : 'pr-8') : ''
           }`}
         >
@@ -484,18 +486,20 @@ function ProjectStatusCard({
           ) : null}
         </div>
         {showDetails ? (
-          <p className="mb-2 text-[11px] text-muted">
-            {total === 0 ? (
-              'No tasks'
-            ) : (
-              <>
-                {done} of {total} done ·{' '}
-                <span className="font-medium text-text">{remaining} left</span>
-              </>
-            )}
-          </p>
+          <>
+            <p className="mb-2 text-[11px] text-muted">
+              {total === 0 ? (
+                'No tasks'
+              ) : (
+                <>
+                  {done} of {total} done ·{' '}
+                  <span className="font-medium text-text">{remaining} left</span>
+                </>
+              )}
+            </p>
+            <ProgressBar progress={progress} fillClassName={fillClassName} />
+          </>
         ) : null}
-        <ProgressBar progress={progress} fillClassName={fillClassName} />
       </button>
     </div>
   )
