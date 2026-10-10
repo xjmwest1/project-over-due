@@ -409,7 +409,10 @@ function ProjectStatusCard({
   onEdit,
   onClearFilter,
 }: CardProps) {
-  const showActions = Boolean(onEdit || onClearFilter)
+  // Detail chrome (edit, done/left counts) only on the selected/expanded card.
+  const showDetails = selected || expanded
+  const showEdit = showDetails && Boolean(onEdit)
+  const showActions = showEdit || Boolean(onClearFilter)
 
   return (
     <div
@@ -424,7 +427,7 @@ function ProjectStatusCard({
     >
       {showActions ? (
         <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
-          {onEdit ? (
+          {showEdit ? (
             <button
               type="button"
               aria-label="Edit project"
@@ -432,7 +435,7 @@ function ProjectStatusCard({
               className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md text-muted hover:bg-white/5 hover:text-text"
               onClick={(e) => {
                 e.stopPropagation()
-                onEdit()
+                onEdit?.()
               }}
             >
               <PencilIcon className="h-4 w-4" />
@@ -480,16 +483,18 @@ function ProjectStatusCard({
             </span>
           ) : null}
         </div>
-        <p className="mb-2 text-[11px] text-muted">
-          {total === 0 ? (
-            'No tasks'
-          ) : (
-            <>
-              {done} of {total} done ·{' '}
-              <span className="font-medium text-text">{remaining} left</span>
-            </>
-          )}
-        </p>
+        {showDetails ? (
+          <p className="mb-2 text-[11px] text-muted">
+            {total === 0 ? (
+              'No tasks'
+            ) : (
+              <>
+                {done} of {total} done ·{' '}
+                <span className="font-medium text-text">{remaining} left</span>
+              </>
+            )}
+          </p>
+        ) : null}
         <ProgressBar progress={progress} fillClassName={fillClassName} />
       </button>
     </div>
