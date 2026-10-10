@@ -90,7 +90,11 @@ export function ProjectStatusStrip({
       return Math.max(CARD_WIDTH, viewport.clientWidth - padX)
     }
 
-    const entering = prev == null && selectedProjectId != null
+    // Enter whenever the selection becomes a (possibly different) project.
+    // Using only `prev == null` breaks the second expand: leave cleanup used
+    // to restore prev after finalize, so the next select never matched entering.
+    const entering =
+      selectedProjectId != null && prev !== selectedProjectId
     const leaving = prev != null && selectedProjectId == null
 
     if (entering && selectedTrackIndex >= 0) {
@@ -235,8 +239,12 @@ export function ProjectStatusStrip({
           clearTimeout(exitTimerRef.current)
           exitTimerRef.current = null
         }
-        // Restore so React Strict Mode's leave re-run still sees "leaving".
-        prevSelectedRef.current = leaveFromId
+        // Strict Mode remounts leave before finalize — restore so the re-run
+        // still sees "leaving". After finalize, prev is already null; do not
+        // put the old id back or the next expand won't detect entering.
+        if (!finalized) {
+          prevSelectedRef.current = leaveFromId
+        }
       }
     }
 
@@ -292,7 +300,7 @@ export function ProjectStatusStrip({
       >
         <div
           ref={trackRef}
-          className="flex items-stretch gap-2 motion-reduce:!transition-none"
+          className="flex items-start gap-2 motion-reduce:!transition-none"
           style={{
             transform: `translateX(${shift}px)`,
             transition: trackTransition,
@@ -409,12 +417,17 @@ function ProjectStatusCard({
   onEdit,
   onClearFilter,
 }: CardProps) {
-  const showActions = Boolean(onEdit || onClearFilter)
+  // Detail chrome only on the expanded project card (not "All projects").
+  const showDetails = expanded
+  const showEdit = showDetails && Boolean(onEdit)
+  const showActions = showEdit || Boolean(onClearFilter)
 
   return (
     <div
       data-strip-card={cardId}
-      className={`relative flex shrink-0 flex-col rounded-[var(--radius-card)] border px-3 py-2.5 text-left motion-reduce:!transition-none ${
+      className={`relative flex shrink-0 flex-col rounded-[var(--radius-card)] border px-3 text-left motion-reduce:!transition-none ${
+        showDetails ? 'py-2.5' : 'py-1.5'
+      } ${
         selected || expanded
           ? 'border-white/20 bg-surface-raised ring-1 ring-white/10'
           : 'border-border bg-surface hover:bg-surface-raised'
@@ -424,7 +437,7 @@ function ProjectStatusCard({
     >
       {showActions ? (
         <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
-          {onEdit ? (
+          {showEdit ? (
             <button
               type="button"
               aria-label="Edit project"
@@ -432,7 +445,7 @@ function ProjectStatusCard({
               className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md text-muted hover:bg-white/5 hover:text-text"
               onClick={(e) => {
                 e.stopPropagation()
-                onEdit()
+                onEdit?.()
               }}
             >
               <PencilIcon className="h-4 w-4" />
@@ -461,7 +474,7 @@ function ProjectStatusCard({
         tabIndex={inert ? -1 : undefined}
       >
         <div
-          className={`mb-1 flex items-center gap-2 ${
+          className={`flex items-center gap-2 ${showDetails ? 'mb-1' : ''} ${
             showActions ? (onClearFilter ? 'pr-16' : 'pr-8') : ''
           }`}
         >
@@ -480,17 +493,21 @@ function ProjectStatusCard({
             </span>
           ) : null}
         </div>
-        <p className="mb-2 text-[11px] text-muted">
-          {total === 0 ? (
-            'No tasks'
-          ) : (
-            <>
-              {done} of {total} done ·{' '}
-              <span className="font-medium text-text">{remaining} left</span>
-            </>
-          )}
-        </p>
-        <ProgressBar progress={progress} fillClassName={fillClassName} />
+        {showDetails ? (
+          <>
+            <p className="mb-2 text-[11px] text-muted">
+              {total === 0 ? (
+                'No tasks'
+              ) : (
+                <>
+                  {done} of {total} done ·{' '}
+                  <span className="font-medium text-text">{remaining} left</span>
+                </>
+              )}
+            </p>
+            <ProgressBar progress={progress} fillClassName={fillClassName} />
+          </>
+        ) : null}
       </button>
     </div>
   )
