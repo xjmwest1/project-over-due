@@ -90,7 +90,11 @@ export function ProjectStatusStrip({
       return Math.max(CARD_WIDTH, viewport.clientWidth - padX)
     }
 
-    const entering = prev == null && selectedProjectId != null
+    // Enter whenever the selection becomes a (possibly different) project.
+    // Using only `prev == null` breaks the second expand: leave cleanup used
+    // to restore prev after finalize, so the next select never matched entering.
+    const entering =
+      selectedProjectId != null && prev !== selectedProjectId
     const leaving = prev != null && selectedProjectId == null
 
     if (entering && selectedTrackIndex >= 0) {
@@ -235,8 +239,12 @@ export function ProjectStatusStrip({
           clearTimeout(exitTimerRef.current)
           exitTimerRef.current = null
         }
-        // Restore so React Strict Mode's leave re-run still sees "leaving".
-        prevSelectedRef.current = leaveFromId
+        // Strict Mode remounts leave before finalize — restore so the re-run
+        // still sees "leaving". After finalize, prev is already null; do not
+        // put the old id back or the next expand won't detect entering.
+        if (!finalized) {
+          prevSelectedRef.current = leaveFromId
+        }
       }
     }
 
