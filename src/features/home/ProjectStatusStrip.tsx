@@ -409,8 +409,8 @@ function ProjectStatusCard({
   onEdit,
   onClearFilter,
 }: CardProps) {
-  // Detail chrome (edit, done/left counts) only on the selected/expanded card.
-  const showDetails = selected || expanded
+  // Detail chrome only on the expanded project card (not "All projects").
+  const showDetails = expanded
   const showEdit = showDetails && Boolean(onEdit)
   const showActions = showEdit || Boolean(onClearFilter)
 
