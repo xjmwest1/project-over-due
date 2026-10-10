@@ -292,7 +292,7 @@ export function ProjectStatusStrip({
       >
         <div
           ref={trackRef}
-          className="flex items-stretch gap-2 motion-reduce:!transition-none"
+          className="flex items-start gap-2 motion-reduce:!transition-none"
           style={{
             transform: `translateX(${shift}px)`,
             transition: trackTransition,
